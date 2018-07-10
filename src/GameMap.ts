@@ -4,6 +4,9 @@ import { Rect } from "./Rect";
 import { randomInt } from "./randomInt";
 import { Entity, entities } from "./Entity";
 import { COLORS } from "./Colors";
+import { Fighter } from "./Fighter";
+import { BasicMonsterAi } from "./BasicMonsterAi";
+import { RenderOrder } from "./RenderOrder";
 
 interface GameMapOptions {
     height: number;
@@ -177,9 +180,29 @@ export class GameMap {
             if (!entities.some(e => e.x == x && e.y == y)) {
                 let monster: Entity = null;
                 if (randomInt(0, 100) < 80) {
-                    monster = { x: x, y: y, symbol: 'O', color: 'white', name: 'Orc', isBlocking: true };
+                    monster = new Entity(
+                        x,
+                        y,
+                        'white',
+                        'O',
+                        true,
+                        'Orc',
+                        RenderOrder.ACTOR,
+                        new Fighter(10, 0, 3),
+                        new BasicMonsterAi()
+                    );
                 } else {
-                    monster = { x: x, y: y, symbol: 'T', color: 'white', name: 'Troll', isBlocking: true };
+                    monster = new Entity(
+                        x,
+                        y,
+                        'white',
+                        'T',
+                        true,
+                        'Troll',
+                        RenderOrder.ACTOR,
+                        new Fighter(16, 1, 4),
+                        new BasicMonsterAi()
+                    );
                 }
                 entities.push(monster);
             }

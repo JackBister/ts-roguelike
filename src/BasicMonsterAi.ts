@@ -1,18 +1,20 @@
-import * as ROT from "rot-js"
+import * as ROT from "rot-js";
 
-import { Ai } from "./Ai";
+import { IAi } from "./Ai";
 import { Entity } from "./Entity";
-import { GameMap } from "./GameMap"
-import { FightResult } from "./FightResult";
+import { IFightResult } from "./FightResult";
+import { GameMap } from "./GameMap";
 
-export class BasicMonsterAi implements Ai {
+export class BasicMonsterAi implements IAi {
+    public owner: Entity;
+
     public takeTurn(target: Entity, fov: ROT.FOV, map: GameMap, entities: Entity[]) {
-        let results: FightResult[] = [];
-        let monster = this.owner;
+        let results: IFightResult[] = [];
+        const monster = this.owner;
 
         let canSeeTarget = false;
         fov.compute(monster.x, monster.y, 10, (x, y, r, vis) => {
-            if (x == target.x && y == target.y) {
+            if (x === target.x && y === target.y) {
                 canSeeTarget = true;
             }
         });
@@ -27,6 +29,4 @@ export class BasicMonsterAi implements Ai {
 
         return results;
     }
-
-    public owner: Entity;
 }

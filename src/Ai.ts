@@ -1,11 +1,11 @@
-import * as ROT from "rot-js"
+import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
+import { IFightResult } from "./FightResult";
 import { GameMap } from "./GameMap";
-import { FightResult } from "./FightResult";
 
-export interface Ai {
-    takeTurn(target: Entity, fov: ROT.FOV, map: GameMap, entities: Entity[]): FightResult[];
-
+export interface IAi {
     owner: Entity;
+
+    takeTurn(target: Entity, fov: ROT.FOV, map: GameMap, entities: Entity[]): IFightResult[];
 }

@@ -1,7 +1,7 @@
-import { GameMap } from "./GameMap";
 import { Entity } from "./Entity";
+import { GameMap } from "./GameMap";
 
-export interface GameMapOptions {
+export interface IGameMapOptions {
     height: number;
     width: number;
 
@@ -13,18 +13,18 @@ export interface GameMapOptions {
     maxRooms?: number;
 }
 
-export const DEFAULT_OPTIONS: GameMapOptions = {
+export const DEFAULT_OPTIONS: IGameMapOptions = {
     height: 45,
     width: 80,
 
     player: null,
 
+    maxMonstersPerRoom: 3,
+    maxRooms: 30,
     roomMaxSize: 10,
     roomMinSize: 6,
-    maxMonstersPerRoom: 3,
-    maxRooms: 30
 };
 
-export interface MapGenerator {
-    generate(opts: GameMapOptions, entities: Entity[]): GameMap;
+export interface IMapGenerator {
+    generate(opts: IGameMapOptions, entities: Entity[]): GameMap;
 }

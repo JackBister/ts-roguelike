@@ -1,7 +1,9 @@
 import { Message } from "./Message";
 
 export class MessageLog {
-    constructor(x: number, height: number, width: number) {
+    public messages: Message[];
+
+    constructor(public x: number, public height: number, public width: number) {
         this.messages = [];
 
         this.x = x;
@@ -15,10 +17,4 @@ export class MessageLog {
             this.messages = this.messages.slice(1);
         }
     }
-    
-    public messages: Message[];
-
-    public x: number;
-    public height: number;
-    public width: number;
 }

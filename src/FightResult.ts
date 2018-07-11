@@ -1,7 +1,7 @@
 import { Entity } from "./Entity";
 import { Message } from "./Message";
 
-export interface FightResult {
+export interface IFightResult {
     message?: Message;
     dead?: Entity;
 }

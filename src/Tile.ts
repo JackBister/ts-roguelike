@@ -1,5 +1,5 @@
 
-export interface Tile {
+export interface ITile {
     isBlocked: boolean;
     blocksSight: boolean;
     isSeen: boolean;

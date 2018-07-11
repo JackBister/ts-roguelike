@@ -54,7 +54,7 @@ const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
         return !map.getTile(x, y).blocksSight;
     },
 );
-export let entities: Entity[] = [];
+const entities: Entity[] = [];
 let gameState: GameState = GameState.PLAYER_TURN;
 let lastPointedEntityName: string = "";
 let map: GameMap;
@@ -105,11 +105,11 @@ function entityTick() {
         }
     }
 
+    gameState = GameState.PLAYER_TURN;
+
     addResultsToMessageLog(results);
 
     draw(con, panel, player);
-
-    gameState = GameState.PLAYER_TURN;
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
@@ -273,28 +273,26 @@ function onKeyDown(evt: KeyboardEvent) {
             break;
     }
 
-    if (player.fighter.currHp > 0) {
-        let results: IFightResult[] = [];
+    let results: IFightResult[] = [];
 
-        let targetEntity: Entity = null;
-        {
-            const targetEntities = entities.filter((e) => e.x === nextPos.x && e.y === nextPos.y);
-            if (targetEntities.length > 0) {
-                targetEntity = targetEntities[0];
-            }
+    let targetEntity: Entity = null;
+    {
+        const targetEntities = entities.filter((e) => e.x === nextPos.x && e.y === nextPos.y);
+        if (targetEntities.length > 0) {
+            targetEntity = targetEntities[0];
         }
-
-        if (targetEntity) {
-            results = results.concat(player.fighter.attack(targetEntity));
-        }
-
-        if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
-            player.x = nextPos.x;
-            player.y = nextPos.y;
-        }
-
-        addResultsToMessageLog(results);
     }
+
+    if (targetEntity) {
+        results = results.concat(player.fighter.attack(targetEntity));
+    }
+
+    if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
+        player.x = nextPos.x;
+        player.y = nextPos.y;
+    }
+
+    addResultsToMessageLog(results);
 
     draw(con, panel, player);
 

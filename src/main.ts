@@ -169,7 +169,7 @@ function drawBar(panel: ROT.Display, x: number, y: number, totalWidth: number, n
             y,
             '',
             null,
-            i < barWidth ? color: backColor,
+            i < barWidth ? color : backColor,
         )
     }
 
@@ -271,27 +271,30 @@ function onKeyDown(evt: KeyboardEvent) {
             break;
     }
 
-    let results: FightResult[] = [];
+    if (player.fighter.currHp > 0) {
+        let results: FightResult[] = [];
 
-    let targetEntity: Entity = null;
-    {
-        let targetEntities = entities.filter(e => e.x == nextPos.x && e.y == nextPos.y);
-        if (targetEntities.length > 0) {
-            targetEntity = targetEntities[0];
+        let targetEntity: Entity = null;
+        {
+            let targetEntities = entities.filter(e => e.x == nextPos.x && e.y == nextPos.y);
+            if (targetEntities.length > 0) {
+                targetEntity = targetEntities[0];
+            }
         }
+
+        if (targetEntity) {
+            results = results.concat(player.fighter.attack(targetEntity));
+        }
+
+        if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
+            player.x = nextPos.x;
+            player.y = nextPos.y;
+        }
+
+        addResultsToMessageLog(results);
     }
 
-    if (targetEntity) {
-        results = results.concat(player.fighter.attack(targetEntity));
-    }
-
-    if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
-        player.x = nextPos.x;
-        player.y = nextPos.y;
-    }
     draw(con, panel, player);
-
-    addResultsToMessageLog(results);
 
     gameState = GameState.ENEMY_TURN;
     entityTick();
@@ -305,7 +308,7 @@ function onMouseMove(evt: MouseEvent) {
     }
 
     let filteredEnts = entities.filter(e => e.x == pos[0] && e.y == pos[1]).sort(e => e.renderOrder);
-    
+
     let pointedEntName = "";
     if (filteredEnts.length > 0) {
         let pointedEnt = filteredEnts[filteredEnts.length - 1];

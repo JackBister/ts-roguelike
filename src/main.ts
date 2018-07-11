@@ -8,6 +8,7 @@ import { Fighter } from "./Fighter";
 import { FightResult } from "./FightResult";
 import { RenderOrder } from "./RenderOrder";
 import { MessageLog } from "./MessageLog";
+import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 const BAR_WIDTH = 20;
 
@@ -210,7 +211,7 @@ export function main() {
 
     entities.push(player);
 
-    map = new GameMap({ height: MAP_HEIGHT, width: MAP_WIDTH, player: player });
+    map = new TutorialMapGenerator().generate({ height: MAP_HEIGHT, width: MAP_WIDTH, player: player }, entities);
 
     window.onkeydown = onKeyDown;
 

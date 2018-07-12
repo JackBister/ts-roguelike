@@ -10,12 +10,10 @@ import { RenderOrder } from "./RenderOrder";
 export class TutorialMapGenerator implements IMapGenerator {
     private opts: IGameMapOptions;
 
-    public generate(opts: IGameMapOptions, entities: Entity[]) {
+    public generate(opts: IGameMapOptions, player: Entity, entities: Entity[]) {
         this.opts = {
             height: opts.height || DEFAULT_OPTIONS.height,
             width: opts.width || DEFAULT_OPTIONS.width,
-
-            player: opts.player || DEFAULT_OPTIONS.player,
 
             maxMonstersPerRoom: opts.maxMonstersPerRoom || DEFAULT_OPTIONS.maxMonstersPerRoom,
             maxRooms: opts.maxRooms || DEFAULT_OPTIONS.maxRooms,
@@ -57,10 +55,10 @@ export class TutorialMapGenerator implements IMapGenerator {
             }
         }
 
-        if (this.opts.player) {
+        if (player) {
             const room0center = rooms[0].getCenter();
-            this.opts.player.x = room0center[0];
-            this.opts.player.y = room0center[1];
+            player.x = room0center[0];
+            player.y = room0center[1];
         }
         return ret;
     }

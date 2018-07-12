@@ -93,23 +93,31 @@ function addResultsToMessageLog(results: IFightResult[]) {
     }
 }
 
-function entityTick() {
-    if (gameState !== GameState.ENEMY_TURN) {
-        return;
+function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Display) {
+    const htmlBody = document.querySelector("body");
+    htmlBody.style.height = window.innerHeight + "px";
+    htmlBody.style.widows = window.innerWidth + "px";
+
+    const grid = document.getElementById("grid");
+    if (navigator && navigator.maxTouchPoints > 0) {
+        grid.style.display = "grid";
+    } else {
+        grid.style.display = "none";
     }
 
-    let results: IFightResult[] = [];
-    for (const v of entities) {
-        if (v.ai) {
-            results = results.concat(v.ai.takeTurn(player, fov, map, entities));
-        }
-    }
+    const [mainWidth, mainHeight] = mainDisplay.computeSize(
+        window.innerWidth,
+        Math.floor(window.innerHeight * CONSOLE_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT)),
+    );
 
-    gameState = GameState.PLAYER_TURN;
+    mainDisplay.setOptions({ height: mainHeight, width: mainWidth });
 
-    addResultsToMessageLog(results);
+    const [panelWidth, panelHeight] = mainDisplay.computeSize(
+        window.innerWidth,
+        Math.ceil(window.innerHeight * PANEL_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT)),
+    );
 
-    draw(con, panel, player);
+    panelDisplay.setOptions({ height: panelHeight, width: panelWidth });
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
@@ -120,15 +128,23 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
 function drawCon(display: ROT.Display, target: Entity) {
     display.clear();
 
+    const mapX0 = target.x;
+    const mapY0 = target.y;
+
+    const conX0 = Math.floor(display.getOptions().width / 2);
+    const conY0 = Math.floor(display.getOptions().height / 2);
+
     // Draw tiles that aren't currently in FOV
     for (let x = 0; x < MAP_WIDTH; ++x) {
         for (let y = 0; y < MAP_HEIGHT; ++y) {
+            const finalPosX = x - mapX0 + conX0;
+            const finalPosY = y - mapY0 + conY0;
             const tile = map.getTile(x, y);
             if (tile.isSeen) {
                 if (tile.blocksSight) {
-                    display.draw(x, y, "", null, COLORS.darkWall);
+                    display.draw(finalPosX, finalPosY, "", null, COLORS.darkWall);
                 } else {
-                    display.draw(x, y, "", null, COLORS.darkGround);
+                    display.draw(finalPosX, finalPosY, "", null, COLORS.darkGround);
                 }
             }
         }
@@ -136,17 +152,19 @@ function drawCon(display: ROT.Display, target: Entity) {
 
     // Compute current FOV and draw
     fov.compute(target.x, target.y, PLAYER_FOV, (x, y, r, vis) => {
+        const finalPosX = x - mapX0 + conX0;
+        const finalPosY = y - mapY0 + conY0;
         const tile = map.getTile(x, y);
         tile.isSeen = true;
         if (tile.blocksSight) {
-            display.draw(x, y, "", null, COLORS.lightWall);
+            display.draw(finalPosX, finalPosY, "", null, COLORS.lightWall);
         } else {
-            display.draw(x, y, "", null, COLORS.lightGround);
+            display.draw(finalPosX, finalPosY, "", null, COLORS.lightGround);
         }
         // TODO: Probably very slow with lots of entities + big rooms
         const visEnts = entities.filter((e) => e.x === x && e.y === y).sort((e) => e.renderOrder);
         for (const v of visEnts) {
-            display.draw(v.x, v.y, v.symbol, v.color, COLORS.lightGround);
+            display.draw(finalPosX, finalPosY, v.symbol, v.color, COLORS.lightGround);
         }
     });
 }
@@ -198,6 +216,25 @@ function drawMessageLog(display: ROT.Display, log: MessageLog) {
     }
 }
 
+function entityTick() {
+    if (gameState !== GameState.ENEMY_TURN) {
+        return;
+    }
+
+    let results: IFightResult[] = [];
+    for (const v of entities) {
+        if (v.ai) {
+            results = results.concat(v.ai.takeTurn(player, fov, map, entities));
+        }
+    }
+
+    gameState = GameState.PLAYER_TURN;
+
+    addResultsToMessageLog(results);
+
+    draw(con, panel, player);
+}
+
 export function main() {
     if (!ROT.isSupported()) {
         throw new Error("ERROR: ROT.js is not supported by this browser!");
@@ -210,13 +247,23 @@ export function main() {
     panel = new ROT.Display({ height: PANEL_HEIGHT, width: CONSOLE_WIDTH, forceSquareRatio: true, fontSize: 20 });
     container.appendChild(panel.getContainer());
 
+    calculateCanvasSizes(con, panel);
+
     entities.push(player);
 
-    map = new TutorialMapGenerator().generate({ height: MAP_HEIGHT, width: MAP_WIDTH, player }, entities);
+    map = new TutorialMapGenerator().generate({ height: MAP_HEIGHT, width: MAP_WIDTH }, player, entities);
 
     window.onkeydown = onKeyDown;
 
     window.onmousemove = onMouseMove;
+
+    window.onresize = () => {
+        calculateCanvasSizes(con, panel);
+        draw(con, panel, player);
+    };
+
+    window.ontouchstart = onTouchStart;
+    window.ontouchend = (evt) => evt.preventDefault();
 
     draw(con, panel, player);
 }
@@ -228,10 +275,6 @@ function onKeyDown(evt: KeyboardEvent) {
         return;
     }
     evt.preventDefault();
-
-    if (gameState !== GameState.PLAYER_TURN) {
-        return;
-    }
 
     const nextPos = {
         x: player.x,
@@ -273,31 +316,7 @@ function onKeyDown(evt: KeyboardEvent) {
             break;
     }
 
-    let results: IFightResult[] = [];
-
-    let targetEntity: Entity = null;
-    {
-        const targetEntities = entities.filter((e) => e.x === nextPos.x && e.y === nextPos.y);
-        if (targetEntities.length > 0) {
-            targetEntity = targetEntities[0];
-        }
-    }
-
-    if (targetEntity) {
-        results = results.concat(player.fighter.attack(targetEntity));
-    }
-
-    if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
-        player.x = nextPos.x;
-        player.y = nextPos.y;
-    }
-
-    addResultsToMessageLog(results);
-
-    draw(con, panel, player);
-
-    gameState = GameState.ENEMY_TURN;
-    entityTick();
+    playerTick(nextPos);
 }
 
 function onMouseMove(evt: MouseEvent) {
@@ -320,4 +339,62 @@ function onMouseMove(evt: MouseEvent) {
     }
     lastPointedEntityName = pointedEntName;
     drawPanel(panel, player, pointedEntName);
+}
+
+function onTouchStart(evt: TouchEvent) {
+    if (evt.touches && evt.touches.length > 0) {
+        const touch = evt.touches[0];
+        const nextPos = {
+            x: player.x,
+            y: player.y,
+        };
+
+        if (touch.clientX < window.innerWidth / 3) {
+            nextPos.x--;
+        } else if (touch.clientX > window.innerWidth / 3 * 2) {
+            nextPos.x++;
+        }
+
+        if (touch.clientY < window.innerHeight / 3) {
+            nextPos.y--;
+        } else if (touch.clientY > window.innerHeight / 3 * 2) {
+            nextPos.y++;
+        }
+
+        if (nextPos.x !== player.x || nextPos.y !== player.y) {
+            playerTick(nextPos);
+        }
+    }
+}
+
+function playerTick(nextPos: { x: number, y: number }) {
+    if (gameState !== GameState.PLAYER_TURN) {
+        return;
+    }
+    let results: IFightResult[] = [];
+
+    let targetEntity: Entity = null;
+    {
+        const targetEntities = entities.filter((e) => e.x === nextPos.x && e.y === nextPos.y);
+        if (targetEntities.length > 0) {
+            targetEntity = targetEntities[0];
+        }
+    }
+
+    if (targetEntity) {
+        results = results.concat(player.fighter.attack(targetEntity));
+    }
+
+    if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
+        player.x = nextPos.x;
+        player.y = nextPos.y;
+    }
+
+    gameState = GameState.ENEMY_TURN;
+
+    addResultsToMessageLog(results);
+
+    draw(con, panel, player);
+
+    entityTick();
 }

@@ -341,8 +341,15 @@ function onMouseMove(evt: MouseEvent) {
     if (typeof pos === "number") {
         return;
     }
+    const conX0 = Math.floor(con.getOptions().width / 2);
+    const conY0 = Math.floor(con.getOptions().height / 2);
 
-    const filteredEnts = entities.filter((e) => e.x === pos[0] && e.y === pos[1]).sort((e) => e.renderOrder);
+    const filteredEnts = entities
+        .filter((e) => {
+            const finalPosX = e.x - player.x + conX0;
+            const finalPosY = e.y - player.y + conY0;
+            return finalPosX === pos[0] && finalPosY === pos[1];
+        }).sort((e) => e.renderOrder);
 
     let pointedEntName = "";
     if (filteredEnts.length > 0) {

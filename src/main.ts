@@ -108,19 +108,23 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
         grid.style.display = "none";
     }
 
+    const conHeight = Math.floor(window.innerHeight * CONSOLE_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT));
+
     const [mainWidth, mainHeight] = mainDisplay.computeSize(
         window.innerWidth,
-        Math.floor(window.innerHeight * CONSOLE_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT)),
+        conHeight,
     );
 
     mainDisplay.setOptions({ height: mainHeight, width: mainWidth });
 
     const [panelWidth, panelHeight] = mainDisplay.computeSize(
         window.innerWidth,
-        Math.ceil(window.innerHeight * PANEL_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT)),
+        window.innerHeight - conHeight,
     );
 
     panelDisplay.setOptions({ height: panelHeight, width: panelWidth });
+
+    messageLog.height = panelHeight - 1;
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {

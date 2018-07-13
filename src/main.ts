@@ -99,7 +99,10 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
     htmlBody.style.widows = window.innerWidth + "px";
 
     const grid = document.getElementById("grid");
-    if (navigator && navigator.maxTouchPoints > 0) {
+    if (navigator &&
+        (navigator.maxTouchPoints > 0
+            || navigator.msMaxTouchPoints > 0
+            || /iPad|iPhone|iPod/.test(navigator.platform))) {
         grid.style.display = "grid";
     } else {
         grid.style.display = "none";
@@ -342,6 +345,7 @@ function onMouseMove(evt: MouseEvent) {
 }
 
 function onTouchStart(evt: TouchEvent) {
+    evt.preventDefault();
     if (evt.touches && evt.touches.length > 0) {
         const touch = evt.touches[0];
         const nextPos = {

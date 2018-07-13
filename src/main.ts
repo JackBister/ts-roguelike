@@ -165,11 +165,20 @@ function drawCon(display: ROT.Display, target: Entity) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightGround);
         }
         // TODO: Probably very slow with lots of entities + big rooms
-        const visEnts = entities.filter((e) => e.x === x && e.y === y).sort((e) => e.renderOrder);
-        for (const v of visEnts) {
-            display.draw(finalPosX, finalPosY, v.symbol, v.color, COLORS.lightGround);
+        const visEnts = entities
+            .filter((e) => e.x === x && e.y === y)
+            .sort((e) => {
+                return e.renderOrder;
+            });
+        if (visEnts.length > 0) {
+            const e = visEnts[visEnts.length - 1];
+            display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.lightGround);
         }
     });
+
+    // HACK: Redraw the player. Normally the FOV stuff above should work,
+    // but it doesn't on iOS (player gets drawn beneath corpses) and I don't see why.
+    display.draw(conX0, conY0, target.symbol, target.color, COLORS.lightGround);
 }
 
 function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: string) {

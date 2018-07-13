@@ -3,7 +3,7 @@
 
     "scripts": {
         "build": "webpack -p",
-        "start": "webpack-dev-server -d --content-base ."
+        "start": "webpack-dev-server -d --content-base . --port 80 --host 0.0.0.0"
     },
     "dependencies": {
         "@types/rot-js": "0.6.3",

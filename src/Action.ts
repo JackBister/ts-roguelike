@@ -1,5 +1,18 @@
 
-export type IAction = IExitAction | IMoveAction | IOpenInventoryAction | IPickupAction;
+export type IAction = IDropAction
+                    | IEnterAction
+                    | IExitAction
+                    | IMoveAction
+                    | IOpenInventoryAction
+                    | IPickupAction;
+
+export interface IDropAction {
+    type: "drop";
+}
+
+export interface IEnterAction {
+    type: "enter";
+}
 
 export interface IExitAction {
     type: "exit";

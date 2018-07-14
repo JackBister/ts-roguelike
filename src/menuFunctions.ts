@@ -3,6 +3,7 @@ import * as ROT from "rot-js";
 export function menu(con: ROT.Display,
                      header: string,
                      options: string[],
+                     selection: number,
                      width: number,
                      screenWidth: number,
                      screenHeight: number) {
@@ -17,7 +18,11 @@ export function menu(con: ROT.Display,
 
     let y = 1;
     for (const v of options) {
-        con.drawText(winX, winY + y, v, width);
+        let text = v;
+        if (y === selection + 1) {
+            text = "%b{blue}" + v;
+        }
+        con.drawText(winX, winY + y, text, width);
         y++;
     }
 }

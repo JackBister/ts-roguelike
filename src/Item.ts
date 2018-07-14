@@ -1,7 +1,9 @@
 import { Entity } from "./Entity";
+import { ITurnResult } from "./TurnResult";
 
-export class Item {
-    public owner: Entity;
+export interface IItem {
+    owner: Entity;
+    name: string;
 
-    constructor(public name: string) {}
+    use: (user: Entity, entities: Entity[]) => ITurnResult[];
 }

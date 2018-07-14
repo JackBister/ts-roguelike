@@ -50,7 +50,10 @@ const USED_KEYS = [
     ROT.VK_G,
     ROT.VK_I,
 
+    ROT.VK_D,
+
     ROT.VK_ESCAPE,
+    ROT.VK_RETURN,
 ];
 
 let con: ROT.Display;
@@ -65,6 +68,7 @@ const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
 );
 const entities: Entity[] = [];
 let gameState: GameState = GameState.PLAYER_TURN;
+let inventorySelection = 0;
 let lastPointedEntityName: string = "";
 let map: GameMap;
 const messageLog: MessageLog = new MessageLog(MESSAGE_X, MESSAGE_HEIGHT, MESSAGE_WIDTH);
@@ -107,6 +111,10 @@ function addResultsToMessageLog(results: ITurnResult[]) {
         if (v.itemAdded) {
             entities.splice(entities.indexOf(v.itemAdded), 1);
         }
+
+        if (v.itemDropped) {
+            entities.push(v.itemDropped);
+        }
     }
 }
 
@@ -145,10 +153,15 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
+    drawCon(mainDisplay, target);
     if (gameState === GameState.SHOW_INVENTORY) {
-        menu(mainDisplay, "Inventory", player.inventory.items.map((i) => i.name), 50, CONSOLE_WIDTH, CONSOLE_HEIGHT);
-    } else {
-        drawCon(mainDisplay, target);
+        menu(mainDisplay,
+            "Inventory",
+            player.inventory.items.map((i) => i.name),
+            inventorySelection,
+            50,
+            CONSOLE_WIDTH,
+            CONSOLE_HEIGHT);
     }
     drawPanel(uiDisplay, target, lastPointedEntityName);
 }
@@ -350,8 +363,15 @@ function onKeyDown(evt: KeyboardEvent) {
         case ROT.VK_I:
             action = { type: "open-inventory" };
             break;
+        case ROT.VK_D:
+            action = { type: "drop" };
+            break;
         case ROT.VK_ESCAPE:
             action = { type: "exit" };
+            break;
+        case ROT.VK_RETURN:
+            action = { type: "enter" };
+            break;
     }
 
     playerTick(action);
@@ -412,11 +432,19 @@ function onTouchStart(evt: TouchEvent) {
         }
 
         if (isMove) {
-            action = { type: "move", to: to };
+            if (gameState === GameState.SHOW_INVENTORY && to[0] === player.x - 1 && to[1] === player.y - 1) {
+                action = { type: "exit" };
+            } else {
+                action = { type: "move", to: to };
+            }
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {
-            action = { type: "open-inventory" };
+            if (gameState === GameState.SHOW_INVENTORY) {
+                action = { type: "enter" };
+            } else {
+                action = { type: "open-inventory" };
+            }
         }
 
         if (action) {
@@ -426,43 +454,64 @@ function onTouchStart(evt: TouchEvent) {
 }
 
 function playerTick(action: IAction) {
-    if (gameState !== GameState.PLAYER_TURN && gameState !== GameState.SHOW_INVENTORY) {
+    if (gameState === GameState.ENEMY_TURN) {
         return;
     }
     let results: ITurnResult[] = [];
 
-    if (gameState === GameState.PLAYER_TURN && action.type === "move") {
-        let targetEntity: Entity = null;
-        {
-            const targetEntities = entities.filter((e) => e.x === action.to[0] && e.y === action.to[1]);
-            if (targetEntities.length > 0) {
-                targetEntity = targetEntities[0];
+    if (gameState === GameState.PLAYER_TURN) {
+        if (action.type === "move") {
+            let targetEntity: Entity = null;
+            {
+                const targetEntities = entities.filter((e) => e.x === action.to[0] && e.y === action.to[1]);
+                if (targetEntities.length > 0) {
+                    targetEntity = targetEntities[0];
+                }
             }
-        }
 
-        if (targetEntity) {
-            results = results.concat(player.fighter.attack(targetEntity));
-        }
+            if (targetEntity) {
+                results = results.concat(player.fighter.attack(targetEntity));
+            }
 
-        if (!map.isBlocked(action.to[0], action.to[1]) && (!targetEntity || !targetEntity.isBlocking)) {
-            player.x = action.to[0];
-            player.y = action.to[1];
-        }
+            if (!map.isBlocked(action.to[0], action.to[1]) && (!targetEntity || !targetEntity.isBlocking)) {
+                player.x = action.to[0];
+                player.y = action.to[1];
+            }
 
-        gameState = GameState.ENEMY_TURN;
-    } else if (gameState === GameState.PLAYER_TURN && action.type === "pickup") {
-        const pickedUpEntity = entities.filter((e) => e.item && e.x === player.x && e.y === player.y);
-        if (pickedUpEntity.length > 0) {
-            results = results.concat(player.inventory.addItem(pickedUpEntity[0].item));
-        } else {
-            messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
+            gameState = GameState.ENEMY_TURN;
+        } else if (action.type === "pickup") {
+            const pickedUpEntity = entities.filter((e) => e.item && e.x === player.x && e.y === player.y);
+            if (pickedUpEntity.length > 0) {
+                results = results.concat(player.inventory.addItem(pickedUpEntity[0].item));
+            } else {
+                messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
+            }
+            gameState = GameState.ENEMY_TURN;
+        } else if (action.type === "open-inventory") {
+            previousGameState = gameState;
+            inventorySelection = 0;
+            gameState = GameState.SHOW_INVENTORY;
         }
-        gameState = GameState.ENEMY_TURN;
-    } else if (gameState === GameState.PLAYER_TURN && action.type === "open-inventory") {
-        previousGameState = gameState;
-        gameState = GameState.SHOW_INVENTORY;
-    } else if (gameState === GameState.SHOW_INVENTORY && action.type === "exit") {
-        gameState = previousGameState;
+    } else if (gameState === GameState.PLAYER_DEAD) {
+        if (action.type === "open-inventory") {
+            previousGameState = gameState;
+            inventorySelection = 0;
+            gameState = GameState.SHOW_INVENTORY;
+        }
+    } else if (gameState === GameState.SHOW_INVENTORY) {
+        if (action.type === "exit") {
+            gameState = previousGameState;
+        } else if (action.type === "move") {
+            if (action.to[1] === player.y + 1 && inventorySelection < player.inventory.items.length - 1) {
+                inventorySelection++;
+            } else if (action.to[1] === player.y - 1 && inventorySelection > 0) {
+                inventorySelection--;
+            }
+        } else if (action.type === "enter") {
+            results = results.concat(player.inventory.useItem(inventorySelection, entities));
+        } else if (action.type === "drop") {
+            results = results.concat(player.inventory.dropItem(inventorySelection, entities));
+        }
     }
 
     addResultsToMessageLog(results);

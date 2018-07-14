@@ -2,7 +2,7 @@ import { BasicMonsterAi } from "./BasicMonsterAi";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
-import { Item } from "./Item";
+import { HealingPotion } from "./HealingPotion";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
 import { Rect } from "./Rect";
@@ -139,7 +139,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     RenderOrder.ITEM,
                     null,
                     null,
-                    new Item("Healing Potion"),
+                    new HealingPotion(4),
                 );
                 entities.push(item);
             }

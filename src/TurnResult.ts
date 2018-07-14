@@ -1,9 +1,10 @@
 import { Entity } from "./Entity";
-import { Item } from "./Item";
 import { Message } from "./Message";
 
 export interface ITurnResult {
-    message?: Message;
+    consumed?: boolean;
     dead?: Entity;
     itemAdded?: Entity;
+    itemDropped?: Entity;
+    message?: Message;
 }

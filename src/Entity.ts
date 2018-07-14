@@ -4,7 +4,7 @@ import { IAi } from "./Ai";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
-import { Item } from "./Item";
+import { IItem } from "./Item";
 import { RenderOrder } from "./RenderOrder";
 
 export class Entity {
@@ -18,7 +18,7 @@ export class Entity {
         public renderOrder: RenderOrder,
         public fighter: Fighter = null,
         public ai: IAi = null,
-        public item: Item = null,
+        public item: IItem = null,
         public inventory: Inventory = null,
     ) {
         if (this.fighter) {

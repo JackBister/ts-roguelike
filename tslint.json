@@ -5,6 +5,7 @@
     ],
     "jsRules": {},
     "rules": {
+        "object-literal-shorthand": false,
         "variable-name": [true, "check-format", "allow-leading-underscore", "ban-keywords"]
     },
     "rulesDirectory": []

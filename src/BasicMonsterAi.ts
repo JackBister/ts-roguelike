@@ -2,14 +2,14 @@ import * as ROT from "rot-js";
 
 import { IAi } from "./Ai";
 import { Entity } from "./Entity";
-import { IFightResult } from "./FightResult";
 import { GameMap } from "./GameMap";
+import { ITurnResult } from "./TurnResult";
 
 export class BasicMonsterAi implements IAi {
     public owner: Entity;
 
     public takeTurn(target: Entity, fov: ROT.FOV, map: GameMap, entities: Entity[]) {
-        let results: IFightResult[] = [];
+        let results: ITurnResult[] = [];
         const monster = this.owner;
 
         let canSeeTarget = false;

@@ -2,6 +2,7 @@ import { BasicMonsterAi } from "./BasicMonsterAi";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
+import { Item } from "./Item";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
 import { Rect } from "./Rect";
@@ -15,6 +16,7 @@ export class TutorialMapGenerator implements IMapGenerator {
             height: opts.height || DEFAULT_OPTIONS.height,
             width: opts.width || DEFAULT_OPTIONS.width,
 
+            maxItemsPerRoom: opts.maxItemsPerRoom || DEFAULT_OPTIONS.maxItemsPerRoom,
             maxMonstersPerRoom: opts.maxMonstersPerRoom || DEFAULT_OPTIONS.maxMonstersPerRoom,
             maxRooms: opts.maxRooms || DEFAULT_OPTIONS.maxRooms,
             roomMaxSize: opts.roomMaxSize || DEFAULT_OPTIONS.roomMaxSize,
@@ -51,7 +53,7 @@ export class TutorialMapGenerator implements IMapGenerator {
 
                 numRooms++;
                 rooms.push(newRoom);
-                this.placeEnemies(newRoom, entities);
+                this.placeEntities(newRoom, entities);
             }
         }
 
@@ -119,8 +121,29 @@ export class TutorialMapGenerator implements IMapGenerator {
         }
     }
 
-    private placeEnemies(room: Rect, entities: Entity[]) {
+    private placeEntities(room: Rect, entities: Entity[]) {
+        const numItems = randomInt(0, this.opts.maxItemsPerRoom);
         const numMonsters = randomInt(0, this.opts.maxMonstersPerRoom);
+
+        for (let i = 0; i < numItems; ++i) {
+            const x = randomInt(room.getX() + 1, room.getX2() - 1);
+            const y = randomInt(room.getY() + 1, room.getY2() - 1);
+            if (!entities.some((e) => e.x === x && e.y === y)) {
+                const item = new Entity(
+                    x,
+                    y,
+                    "violet",
+                    "!",
+                    false,
+                    "Healing Potion",
+                    RenderOrder.ITEM,
+                    null,
+                    null,
+                    new Item("Healing Potion"),
+                );
+                entities.push(item);
+            }
+        }
 
         for (let i = 0; i < numMonsters; ++i) {
             const x = randomInt(room.getX() + 1, room.getX2() - 1);

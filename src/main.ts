@@ -1,13 +1,17 @@
 import * as ROT from "rot-js";
+import { IAction } from "./Action";
 import { COLORS } from "./Colors";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
-import { IFightResult } from "./FightResult";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
+import { Inventory } from "./Inventory";
+import { menu } from "./menuFunctions";
+import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
+import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 const BAR_WIDTH = 20;
@@ -42,6 +46,11 @@ const USED_KEYS = [
     ROT.VK_U,
     ROT.VK_B,
     ROT.VK_N,
+
+    ROT.VK_G,
+    ROT.VK_I,
+
+    ROT.VK_ESCAPE,
 ];
 
 let con: ROT.Display;
@@ -69,9 +78,13 @@ const player: Entity = new Entity(
     "Player",
     RenderOrder.ACTOR,
     new Fighter(30, 2, 5),
+    null,
+    null,
+    new Inventory(26),
 );
+let previousGameState: GameState = null;
 
-function addResultsToMessageLog(results: IFightResult[]) {
+function addResultsToMessageLog(results: ITurnResult[]) {
     for (const v of results) {
         if (v.message) {
             messageLog.addMessage(v.message);
@@ -89,6 +102,10 @@ function addResultsToMessageLog(results: IFightResult[]) {
             }
 
             messageLog.addMessage(deathMessage);
+        }
+
+        if (v.itemAdded) {
+            entities.splice(entities.indexOf(v.itemAdded), 1);
         }
     }
 }
@@ -128,7 +145,11 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
-    drawCon(mainDisplay, target);
+    if (gameState === GameState.SHOW_INVENTORY) {
+        menu(mainDisplay, "Inventory", player.inventory.items.map((i) => i.name), 50, CONSOLE_WIDTH, CONSOLE_HEIGHT);
+    } else {
+        drawCon(mainDisplay, target);
+    }
     drawPanel(uiDisplay, target, lastPointedEntityName);
 }
 
@@ -237,7 +258,7 @@ function entityTick() {
         return;
     }
 
-    let results: IFightResult[] = [];
+    let results: ITurnResult[] = [];
     for (const v of entities) {
         if (v.ai) {
             results = results.concat(v.ai.takeTurn(player, fov, map, entities));
@@ -292,47 +313,48 @@ function onKeyDown(evt: KeyboardEvent) {
     }
     evt.preventDefault();
 
-    const nextPos = {
-        x: player.x,
-        y: player.y,
-    };
+    let action: IAction = null;
 
     switch (code) {
         case ROT.VK_LEFT:
         case ROT.VK_H:
-            nextPos.x--;
+            action = { type: "move", to: [player.x - 1, player.y] };
             break;
         case ROT.VK_UP:
         case ROT.VK_K:
-            nextPos.y--;
+            action = { type: "move", to: [player.x, player.y - 1] };
             break;
         case ROT.VK_RIGHT:
         case ROT.VK_L:
-            nextPos.x++;
+            action = { type: "move", to: [player.x + 1, player.y] };
             break;
         case ROT.VK_DOWN:
         case ROT.VK_J:
-            nextPos.y++;
+            action = { type: "move", to: [player.x, player.y + 1] };
             break;
         case ROT.VK_Y:
-            nextPos.x--;
-            nextPos.y--;
+            action = { type: "move", to: [player.x - 1, player.y - 1] };
             break;
         case ROT.VK_U:
-            nextPos.x++;
-            nextPos.y--;
+            action = { type: "move", to: [player.x + 1, player.y - 1] };
             break;
         case ROT.VK_B:
-            nextPos.x--;
-            nextPos.y++;
+            action = { type: "move", to: [player.x - 1, player.y + 1] };
             break;
         case ROT.VK_N:
-            nextPos.x++;
-            nextPos.y++;
+            action = { type: "move", to: [player.x + 1, player.y + 1] };
             break;
+        case ROT.VK_G:
+            action = { type: "pickup" };
+            break;
+        case ROT.VK_I:
+            action = { type: "open-inventory" };
+            break;
+        case ROT.VK_ESCAPE:
+            action = { type: "exit" };
     }
 
-    playerTick(nextPos);
+    playerTick(action);
 }
 
 function onMouseMove(evt: MouseEvent) {
@@ -368,53 +390,80 @@ function onTouchStart(evt: TouchEvent) {
     evt.preventDefault();
     if (evt.touches && evt.touches.length > 0) {
         const touch = evt.touches[0];
-        const nextPos = {
-            x: player.x,
-            y: player.y,
-        };
+
+        let action: IAction = null;
+        let isMove = false;
+        const to: [number, number] = [player.x, player.y];
 
         if (touch.clientX < window.innerWidth / 3) {
-            nextPos.x--;
+            isMove = true;
+            to[0]--;
         } else if (touch.clientX > window.innerWidth / 3 * 2) {
-            nextPos.x++;
+            isMove = true;
+            to[0]++;
         }
 
         if (touch.clientY < window.innerHeight / 3) {
-            nextPos.y--;
+            isMove = true;
+            to[1]--;
         } else if (touch.clientY > window.innerHeight / 3 * 2) {
-            nextPos.y++;
+            isMove = true;
+            to[1]++;
         }
 
-        if (nextPos.x !== player.x || nextPos.y !== player.y) {
-            playerTick(nextPos);
+        if (isMove) {
+            action = { type: "move", to: to };
+        } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
+            action = { type: "pickup" };
+        } else {
+            action = { type: "open-inventory" };
+        }
+
+        if (action) {
+            playerTick(action);
         }
     }
 }
 
-function playerTick(nextPos: { x: number, y: number }) {
-    if (gameState !== GameState.PLAYER_TURN) {
+function playerTick(action: IAction) {
+    if (gameState !== GameState.PLAYER_TURN && gameState !== GameState.SHOW_INVENTORY) {
         return;
     }
-    let results: IFightResult[] = [];
+    let results: ITurnResult[] = [];
 
-    let targetEntity: Entity = null;
-    {
-        const targetEntities = entities.filter((e) => e.x === nextPos.x && e.y === nextPos.y);
-        if (targetEntities.length > 0) {
-            targetEntity = targetEntities[0];
+    if (gameState === GameState.PLAYER_TURN && action.type === "move") {
+        let targetEntity: Entity = null;
+        {
+            const targetEntities = entities.filter((e) => e.x === action.to[0] && e.y === action.to[1]);
+            if (targetEntities.length > 0) {
+                targetEntity = targetEntities[0];
+            }
         }
-    }
 
-    if (targetEntity) {
-        results = results.concat(player.fighter.attack(targetEntity));
-    }
+        if (targetEntity) {
+            results = results.concat(player.fighter.attack(targetEntity));
+        }
 
-    if (!map.isBlocked(nextPos.x, nextPos.y) && (!targetEntity || !targetEntity.isBlocking)) {
-        player.x = nextPos.x;
-        player.y = nextPos.y;
-    }
+        if (!map.isBlocked(action.to[0], action.to[1]) && (!targetEntity || !targetEntity.isBlocking)) {
+            player.x = action.to[0];
+            player.y = action.to[1];
+        }
 
-    gameState = GameState.ENEMY_TURN;
+        gameState = GameState.ENEMY_TURN;
+    } else if (gameState === GameState.PLAYER_TURN && action.type === "pickup") {
+        const pickedUpEntity = entities.filter((e) => e.item && e.x === player.x && e.y === player.y);
+        if (pickedUpEntity.length > 0) {
+            results = results.concat(player.inventory.addItem(pickedUpEntity[0].item));
+        } else {
+            messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
+        }
+        gameState = GameState.ENEMY_TURN;
+    } else if (gameState === GameState.PLAYER_TURN && action.type === "open-inventory") {
+        previousGameState = gameState;
+        gameState = GameState.SHOW_INVENTORY;
+    } else if (gameState === GameState.SHOW_INVENTORY && action.type === "exit") {
+        gameState = previousGameState;
+    }
 
     addResultsToMessageLog(results);
 

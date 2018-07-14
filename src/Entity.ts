@@ -3,6 +3,8 @@ import * as ROT from "rot-js";
 import { IAi } from "./Ai";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
+import { Inventory } from "./Inventory";
+import { Item } from "./Item";
 import { RenderOrder } from "./RenderOrder";
 
 export class Entity {
@@ -16,6 +18,8 @@ export class Entity {
         public renderOrder: RenderOrder,
         public fighter: Fighter = null,
         public ai: IAi = null,
+        public item: Item = null,
+        public inventory: Inventory = null,
     ) {
         if (this.fighter) {
             this.fighter.owner = this;
@@ -23,6 +27,14 @@ export class Entity {
 
         if (this.ai) {
             this.ai.owner = this;
+        }
+
+        if (this.item) {
+            this.item.owner = this;
+        }
+
+        if (this.inventory) {
+            this.inventory.owner = this;
         }
     }
 

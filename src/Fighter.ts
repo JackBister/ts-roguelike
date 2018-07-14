@@ -1,6 +1,6 @@
 import { Entity } from "./Entity";
-import { IFightResult } from "./FightResult";
 import { Message } from "./Message";
+import { ITurnResult } from "./TurnResult";
 
 export class Fighter {
     public owner: Entity;
@@ -20,7 +20,7 @@ export class Fighter {
     }
 
     public attack(target: Entity) {
-        let results: IFightResult[] = [];
+        let results: ITurnResult[] = [];
 
         if (!target || !target.fighter) {
             return results;
@@ -48,7 +48,7 @@ export class Fighter {
     }
 
     public takeDamage(amount: number) {
-        const results: IFightResult[] = [];
+        const results: ITurnResult[] = [];
 
         this.currHp -= amount;
 

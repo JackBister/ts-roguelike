@@ -1,3 +1,5 @@
+import * as ROT from "rot-js";
+
 import { Entity } from "./Entity";
 import { IItem } from "./Item";
 import { Message } from "./Message";
@@ -66,7 +68,7 @@ export class Inventory {
         return results;
     }
 
-    public useItem(index: number, entities: Entity[]) {
+    public useItem(index: number, entities: Entity[], fov: ROT.FOV, targetX?: number, targetY?: number) {
         let results: ITurnResult[] = [];
 
         if (index >= this.items.length || index < 0) {
@@ -79,7 +81,12 @@ export class Inventory {
             return results;
         }
 
-        const itemUseResults = this.items[index].use(this.owner, entities);
+        if (this.items[index].requiresTarget && targetX === undefined && targetY === undefined) {
+            results.push({ targeting: this.items[index].owner });
+            return results;
+        }
+
+        const itemUseResults = this.items[index].use(this.owner, entities, fov, targetX, targetY);
         if (itemUseResults.some((r) => r.consumed)) {
             this.items.splice(index, 1);
         }

@@ -39,8 +39,12 @@ export class Entity {
     }
 
     public distanceTo(other: Entity) {
-        const dx = other.x - this.x;
-        const dy = other.y - this.y;
+        return this.distanceToPos(other.x, other.y);
+    }
+
+    public distanceToPos(x: number, y: number) {
+        const dx = x - this.x;
+        const dy = y - this.y;
 
         return Math.sqrt(dx * dx + dy * dy);
     }

@@ -1,8 +1,11 @@
 import { BasicMonsterAi } from "./BasicMonsterAi";
+import { ConfusionScroll } from "./ConfusionScroll";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
+import { FireballScroll } from "./FireballScroll";
 import { GameMap } from "./GameMap";
 import { HealingPotion } from "./HealingPotion";
+import { LightningScroll } from "./LightningScroll";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
 import { Rect } from "./Rect";
@@ -129,18 +132,61 @@ export class TutorialMapGenerator implements IMapGenerator {
             const x = randomInt(room.getX() + 1, room.getX2() - 1);
             const y = randomInt(room.getY() + 1, room.getY2() - 1);
             if (!entities.some((e) => e.x === x && e.y === y)) {
-                const item = new Entity(
-                    x,
-                    y,
-                    "violet",
-                    "!",
-                    false,
-                    "Healing Potion",
-                    RenderOrder.ITEM,
-                    null,
-                    null,
-                    new HealingPotion(4),
-                );
+                const itemChance = randomInt(0, 100);
+                let item: Entity = null;
+                if (itemChance < 70) {
+                    item = new Entity(
+                        x,
+                        y,
+                        "yellow",
+                        "#",
+                        false,
+                        "Lightning Scroll",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        new LightningScroll(20, 5),
+                    );
+                } else if (itemChance < 80) {
+                    item = new Entity(
+                        x,
+                        y,
+                        "red",
+                        "#",
+                        false,
+                        "Fireball Scroll",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        new FireballScroll(12, 3),
+                    );
+                } else if (itemChance < 90) {
+                    item = new Entity(
+                        x,
+                        y,
+                        "lightpink",
+                        "#",
+                        false,
+                        "Confusion Scroll",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        new ConfusionScroll(10),
+                    );
+                } else {
+                    item = new Entity(
+                        x,
+                        y,
+                        "violet",
+                        "!",
+                        false,
+                        "Healing Potion",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        new HealingPotion(4),
+                    );
+                }
                 entities.push(item);
             }
         }

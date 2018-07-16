@@ -29,7 +29,7 @@ const MESSAGE_HEIGHT = PANEL_HEIGHT - 1;
 const MESSAGE_WIDTH = CONSOLE_WIDTH - BAR_WIDTH - 2;
 const MESSAGE_X = BAR_WIDTH + 2;
 
-const PLAYER_FOV = 10;
+export const PLAYER_FOV = 10;
 
 const USED_KEYS = [
     ROT.VK_LEFT,
@@ -87,6 +87,8 @@ const player: Entity = new Entity(
     new Inventory(26),
 );
 let previousGameState: GameState = null;
+let targetingItem: Entity = null;
+let targetTile: [number, number];
 
 function addResultsToMessageLog(results: ITurnResult[]) {
     for (const v of results) {
@@ -114,6 +116,14 @@ function addResultsToMessageLog(results: ITurnResult[]) {
 
         if (v.itemDropped) {
             entities.push(v.itemDropped);
+        }
+
+        if (v.targeting) {
+            previousGameState = GameState.PLAYER_TURN;
+            gameState = GameState.TARGETING;
+
+            targetingItem = v.targeting;
+            targetTile = [player.x, player.y];
         }
     }
 }
@@ -199,6 +209,8 @@ function drawCon(display: ROT.Display, target: Entity) {
         tile.isSeen = true;
         if (tile.blocksSight) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightWall);
+        } else if (gameState === GameState.TARGETING && targetTile[0] === x && targetTile[1] === y) {
+            display.draw(finalPosX, finalPosY, "", null, "red");
         } else {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightGround);
         }
@@ -210,7 +222,11 @@ function drawCon(display: ROT.Display, target: Entity) {
             });
         if (visEnts.length > 0) {
             const e = visEnts[visEnts.length - 1];
-            display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.lightGround);
+            if (gameState === GameState.TARGETING && targetTile[0] === x && targetTile[1] === y) {
+                display.draw(finalPosX, finalPosY, e.symbol, e.color, "red");
+            } else {
+                display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.lightGround);
+            }
         }
     });
 
@@ -331,31 +347,31 @@ function onKeyDown(evt: KeyboardEvent) {
     switch (code) {
         case ROT.VK_LEFT:
         case ROT.VK_H:
-            action = { type: "move", to: [player.x - 1, player.y] };
+            action = { type: "move", dir: [-1, 0] };
             break;
         case ROT.VK_UP:
         case ROT.VK_K:
-            action = { type: "move", to: [player.x, player.y - 1] };
+            action = { type: "move", dir: [0, -1] };
             break;
         case ROT.VK_RIGHT:
         case ROT.VK_L:
-            action = { type: "move", to: [player.x + 1, player.y] };
+            action = { type: "move", dir: [1, 0] };
             break;
         case ROT.VK_DOWN:
         case ROT.VK_J:
-            action = { type: "move", to: [player.x, player.y + 1] };
+            action = { type: "move", dir: [0, 1] };
             break;
         case ROT.VK_Y:
-            action = { type: "move", to: [player.x - 1, player.y - 1] };
+            action = { type: "move", dir: [-1, -1] };
             break;
         case ROT.VK_U:
-            action = { type: "move", to: [player.x + 1, player.y - 1] };
+            action = { type: "move", dir: [1, -1] };
             break;
         case ROT.VK_B:
-            action = { type: "move", to: [player.x - 1, player.y + 1] };
+            action = { type: "move", dir: [-1, 1] };
             break;
         case ROT.VK_N:
-            action = { type: "move", to: [player.x + 1, player.y + 1] };
+            action = { type: "move", dir: [1, 1] };
             break;
         case ROT.VK_G:
             action = { type: "pickup" };
@@ -413,7 +429,7 @@ function onTouchStart(evt: TouchEvent) {
 
         let action: IAction = null;
         let isMove = false;
-        const to: [number, number] = [player.x, player.y];
+        const to: [number, number] = [0, 0];
 
         if (touch.clientX < window.innerWidth / 3) {
             isMove = true;
@@ -432,15 +448,17 @@ function onTouchStart(evt: TouchEvent) {
         }
 
         if (isMove) {
-            if (gameState === GameState.SHOW_INVENTORY && to[0] === player.x - 1 && to[1] === player.y - 1) {
-                action = { type: "exit" };
+            if (to[0] === -1 && to[1] === -1) {
+                if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
+                    action = { type: "exit" };
+                }
             } else {
-                action = { type: "move", to: to };
+                action = { type: "move", dir: to };
             }
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {
-            if (gameState === GameState.SHOW_INVENTORY) {
+            if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
                 action = { type: "enter" };
             } else {
                 action = { type: "open-inventory" };
@@ -463,7 +481,8 @@ function playerTick(action: IAction) {
         if (action.type === "move") {
             let targetEntity: Entity = null;
             {
-                const targetEntities = entities.filter((e) => e.x === action.to[0] && e.y === action.to[1]);
+                const targetEntities = entities
+                    .filter((e) => e.x === player.x + action.dir[0] && e.y === player.y + action.dir[1]);
                 if (targetEntities.length > 0) {
                     targetEntity = targetEntities[0];
                 }
@@ -473,9 +492,10 @@ function playerTick(action: IAction) {
                 results = results.concat(player.fighter.attack(targetEntity));
             }
 
-            if (!map.isBlocked(action.to[0], action.to[1]) && (!targetEntity || !targetEntity.isBlocking)) {
-                player.x = action.to[0];
-                player.y = action.to[1];
+            if (!map.isBlocked(player.x + action.dir[0], player.y + action.dir[1])
+                && (!targetEntity || !targetEntity.isBlocking)) {
+                player.x += action.dir[0];
+                player.y += action.dir[1];
             }
 
             gameState = GameState.ENEMY_TURN;
@@ -502,15 +522,39 @@ function playerTick(action: IAction) {
         if (action.type === "exit") {
             gameState = previousGameState;
         } else if (action.type === "move") {
-            if (action.to[1] === player.y + 1 && inventorySelection < player.inventory.items.length - 1) {
-                inventorySelection++;
-            } else if (action.to[1] === player.y - 1 && inventorySelection > 0) {
-                inventorySelection--;
+            inventorySelection += action.dir[1];
+            if (inventorySelection < 0) {
+                inventorySelection = 0;
+            } else if (inventorySelection >= player.inventory.items.length) {
+                inventorySelection = player.inventory.items.length - 1;
             }
         } else if (action.type === "enter") {
-            results = results.concat(player.inventory.useItem(inventorySelection, entities));
+            results = results.concat(player.inventory.useItem(inventorySelection, entities, fov));
+            if (inventorySelection >= player.inventory.items.length) {
+                inventorySelection = player.inventory.items.length - 1;
+            }
         } else if (action.type === "drop") {
             results = results.concat(player.inventory.dropItem(inventorySelection, entities));
+            if (inventorySelection >= player.inventory.items.length) {
+                inventorySelection = player.inventory.items.length - 1;
+            }
+        }
+    } else if (gameState === GameState.TARGETING) {
+        if (action.type === "move") {
+            if (!map.getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight) {
+                targetTile[0] += action.dir[0];
+                targetTile[1] += action.dir[1];
+            }
+        } else if (action.type === "enter") {
+            results = results.concat(
+                player.inventory.useItem(inventorySelection, entities, fov, targetTile[0], targetTile[1]),
+            );
+            if (inventorySelection >= player.inventory.items.length) {
+                inventorySelection = player.inventory.items.length - 1;
+            }
+            gameState = previousGameState;
+        } else if (action.type === "exit") {
+            gameState = previousGameState;
         }
     }
 

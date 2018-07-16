@@ -4,4 +4,5 @@ export enum GameState {
     ENEMY_TURN,
     PLAYER_DEAD,
     SHOW_INVENTORY,
+    TARGETING,
 }

@@ -7,4 +7,6 @@ export interface ITurnResult {
     itemAdded?: Entity;
     itemDropped?: Entity;
     message?: Message;
+    target?: Entity;
+    targeting?: Entity;
 }

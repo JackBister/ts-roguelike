@@ -20,7 +20,7 @@ export interface IExitAction {
 
 export interface IMoveAction {
     type: "move";
-    to: [number, number];
+    dir: [number, number];
 }
 
 export interface IOpenInventoryAction {

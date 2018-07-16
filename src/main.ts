@@ -451,6 +451,14 @@ function onTouchStart(evt: TouchEvent) {
             if (to[0] === -1 && to[1] === -1) {
                 if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
                     action = { type: "exit" };
+                } else {
+                    action = { type: "move", dir: to };
+                }
+            } else if(to[0] === 1 && to[1] === -1) {
+                if (gameState === GameState.SHOW_INVENTORY) {
+                    action = { type: "drop" };
+                } else {
+                    action = { type: "move", dir: to };
                 }
             } else {
                 action = { type: "move", dir: to };

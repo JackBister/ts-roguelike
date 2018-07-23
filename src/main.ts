@@ -454,7 +454,7 @@ function onTouchStart(evt: TouchEvent) {
                 } else {
                     action = { type: "move", dir: to };
                 }
-            } else if(to[0] === 1 && to[1] === -1) {
+            } else if (to[0] === 1 && to[1] === -1) {
                 if (gameState === GameState.SHOW_INVENTORY) {
                     action = { type: "drop" };
                 } else {

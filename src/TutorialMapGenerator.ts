@@ -15,7 +15,7 @@ import { Stairs } from "./Stairs";
 export class TutorialMapGenerator implements IMapGenerator {
     private opts: IGameMapOptions;
 
-    public generate(opts: IGameMapOptions, player: Entity, entities: Entity[]) {
+    public generate(opts: IGameMapOptions, player: Entity, entities: Entity[], dungeonLevel: number) {
         this.opts = {
             height: opts.height || DEFAULT_OPTIONS.height,
             width: opts.width || DEFAULT_OPTIONS.width,
@@ -27,7 +27,7 @@ export class TutorialMapGenerator implements IMapGenerator {
             roomMinSize: opts.roomMinSize || DEFAULT_OPTIONS.roomMinSize,
         };
 
-        const ret = new GameMap(this.opts.height, this.opts.width);
+        const ret = new GameMap(this.opts.height, this.opts.width, entities, dungeonLevel);
 
         let numRooms = 0;
         const rooms: Rect[] = [];
@@ -61,10 +61,27 @@ export class TutorialMapGenerator implements IMapGenerator {
             }
         }
 
+        const room0center = rooms[0].getCenter();
         if (player) {
-            const room0center = rooms[0].getCenter();
             player.x = room0center[0];
             player.y = room0center[1];
+        }
+
+        if (ret.dungeonLevel > 1) {
+            entities.push(new Entity(
+                room0center[0],
+                room0center[1],
+                "white",
+                ">",
+                false,
+                "Stairs",
+                RenderOrder.STAIRS,
+                null,
+                null,
+                null,
+                null,
+                new Stairs(ret.dungeonLevel - 1),
+            ));
         }
 
         const lastRoomCenter = rooms[rooms.length - 1].getCenter();

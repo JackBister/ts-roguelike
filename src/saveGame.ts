@@ -5,7 +5,7 @@ import { MessageLog } from "./MessageLog";
 
 export interface ISavedGame {
     entities: Entity[];
-    gameMap: GameMap;
+    gameMaps: GameMap[];
     gameState: GameState;
     messageLog: MessageLog;
     playerIndex: number;
@@ -13,12 +13,12 @@ export interface ISavedGame {
 
 export function saveGame(player: Entity,
                          entities: Entity[],
-                         gameMap: GameMap,
+                         gameMaps: GameMap[],
                          messageLog: MessageLog,
                          gameState: GameState) {
     localStorage.setItem("savedGame", JSON.stringify({
         entities: entities,
-        gameMap: gameMap,
+        gameMaps: gameMaps,
         gameState: gameState,
         messageLog: messageLog,
         playerIndex: entities.indexOf(player),

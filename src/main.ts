@@ -2,6 +2,7 @@ import * as ROT from "rot-js";
 import { IAction } from "./Action";
 import { COLORS } from "./Colors";
 import { killMonster, killPlayer } from "./deathFunctions";
+import { enterStairs } from "./enterStairs";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
@@ -13,6 +14,7 @@ import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
 import { ISavedGame, saveGame } from "./saveGame";
+import { Stairs } from "./Stairs";
 import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
@@ -70,13 +72,15 @@ const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
             || y < 0 || y >= CONSTANTS.MAP_HEIGHT) {
             return false;
         }
-        return !map.getTile(x, y).blocksSight;
+        return !maps[currentMap].getTile(x, y).blocksSight;
     },
 );
+
+let currentMap = 0;
 let entities: Entity[] = [];
 let gameState: GameState = GameState.MAIN_MENU;
 let lastPointedEntityName: string = "";
-let map: GameMap;
+let maps: GameMap[] = [];
 let menuSelection = 0;
 let messageLog: MessageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
 let panel: ROT.Display;
@@ -197,7 +201,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; ++y) {
             const finalPosX = x - mapX0 + conX0;
             const finalPosY = y - mapY0 + conY0;
-            const tile = map.getTile(x, y);
+            const tile = maps[currentMap].getTile(x, y);
             if (tile.isSeen) {
                 if (tile.blocksSight) {
                     display.draw(finalPosX, finalPosY, "", null, COLORS.darkWall);
@@ -215,7 +219,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         visibleCoordinates.push([x, y]);
         const finalPosX = x - mapX0 + conX0;
         const finalPosY = y - mapY0 + conY0;
-        const tile = map.getTile(x, y);
+        const tile = maps[currentMap].getTile(x, y);
         tile.isSeen = true;
         if (tile.blocksSight) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightWall);
@@ -245,7 +249,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         .forEach((e) => {
             const finalPosX = e.x - mapX0 + conX0;
             const finalPosY = e.y - mapY0 + conY0;
-            const tile = map.getTile(e.x, e.y);
+            const tile = maps[currentMap].getTile(e.x, e.y);
             if (tile.isSeen) {
                 if (!visibleCoordinates.some((v) => v[0] === e.x && v[1] === e.y)) {
                     display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.darkGround);
@@ -277,6 +281,8 @@ function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: stri
     if (pointedEntityName) {
         display.drawText(1, 0, pointedEntityName);
     }
+
+    display.drawText(1, 2, `Floor: ${currentMap + 1}`);
 }
 
 function drawBar(display: ROT.Display, x: number, y: number, totalWidth: number, name: string, value: number,
@@ -323,7 +329,7 @@ function entityTick() {
     let results: ITurnResult[] = [];
     for (const v of entities) {
         if (v.ai) {
-            results = results.concat(v.ai.takeTurn(player, fov, map, entities));
+            results = results.concat(v.ai.takeTurn(player, fov, maps[currentMap], entities));
         }
     }
 
@@ -458,7 +464,9 @@ function onMouseMove(evt: MouseEvent) {
         });
     }
     lastPointedEntityName = pointedEntName;
-    drawPanel(panel, player, pointedEntName);
+    if (gameState !== GameState.MAIN_MENU) {
+        drawPanel(panel, player, pointedEntName);
+    }
 }
 
 function onTouchStart(evt: TouchEvent) {
@@ -553,13 +561,14 @@ function playerTick(action: IAction) {
 
                     gameState = GameState.PLAYER_TURN;
 
-                    map = new TutorialMapGenerator().generate(
+                    maps.push(new TutorialMapGenerator().generate(
                         {
                             height: CONSTANTS.MAP_HEIGHT,
                             width: CONSTANTS.MAP_WIDTH,
                         },
                         player,
-                        entities);
+                        entities,
+                        1));
 
                     messageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
                     break;
@@ -570,7 +579,7 @@ function playerTick(action: IAction) {
                         const savedGame: ISavedGame = JSON.parse(savedGameString);
                         const loadedGame = loadGame(savedGame);
                         entities = loadedGame.entities;
-                        map = loadedGame.gameMap;
+                        maps = loadedGame.gameMaps;
                         gameState = loadedGame.gameState;
                         messageLog = loadedGame.messageLog;
                         player = loadedGame.player;
@@ -594,7 +603,7 @@ function playerTick(action: IAction) {
                 results = results.concat(player.fighter.attack(targetEntity));
             }
 
-            if (!map.isBlocked(player.x + action.dir[0], player.y + action.dir[1])
+            if (!maps[currentMap].isBlocked(player.x + action.dir[0], player.y + action.dir[1])
                 && (!targetEntity || !targetEntity.isBlocking)) {
                 player.x += action.dir[0];
                 player.y += action.dir[1];
@@ -614,9 +623,23 @@ function playerTick(action: IAction) {
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         } else if (action.type === "exit") {
-            saveGame(player, entities, map, messageLog, gameState);
+            saveGame(player, entities, maps, messageLog, gameState);
             menuSelection = 0;
             gameState = GameState.MAIN_MENU;
+            entities = [];
+            maps = [];
+        } else if (action.type === "enter") {
+            const stairsUnderPlayer = entities.filter((e) => e.stairs && e.x === player.x && e.y === player.y);
+            if (stairsUnderPlayer.length > 0) {
+                [entities, currentMap] = enterStairs(
+                    stairsUnderPlayer[0].stairs,
+                    player,
+                    maps,
+                    messageLog,
+                    new TutorialMapGenerator(),
+                    currentMap + 1,
+                );
+            }
         }
     } else if (gameState === GameState.PLAYER_DEAD) {
         if (action.type === "open-inventory") {
@@ -647,7 +670,7 @@ function playerTick(action: IAction) {
         }
     } else if (gameState === GameState.TARGETING) {
         if (action.type === "move") {
-            if (!map.getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight) {
+            if (!maps[currentMap].getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight) {
                 targetTile[0] += action.dir[0];
                 targetTile[1] += action.dir[1];
             }

@@ -12,15 +12,17 @@ import { Stairs } from "./Stairs";
 
 interface ILoadedGame {
     entities: Entity[];
-    gameMap: GameMap;
+    gameMaps: GameMap[];
     gameState: GameState;
     messageLog: MessageLog;
     player: Entity;
 }
 
 export function loadGame(savedGame: ISavedGame) {
-    const ret: ILoadedGame = { entities: [], gameMap: null, gameState: null, messageLog: null, player: null };
-    ret.gameMap = GameMap.fromOtherMap(savedGame.gameMap);
+    const ret: ILoadedGame = { entities: [], gameMaps: [], gameState: null, messageLog: null, player: null };
+    for (const m of savedGame.gameMaps) {
+        ret.gameMaps.push(GameMap.fromOtherMap(m));
+    }
     ret.gameState = savedGame.gameState;
     ret.messageLog = MessageLog.fromOtherMessageLog(savedGame.messageLog);
     for (const e of savedGame.entities) {

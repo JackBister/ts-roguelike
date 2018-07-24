@@ -1,8 +1,9 @@
+import { Entity } from "./Entity";
 import { ITile } from "./Tile";
 
 export class GameMap {
     public static fromOtherMap(mapToCopy: GameMap): GameMap {
-        const ret = new GameMap(mapToCopy.height, mapToCopy.width);
+        const ret = new GameMap(mapToCopy.height, mapToCopy.width, mapToCopy.entities);
 
         for (let x = 0; x < ret.width; ++x) {
             for (let y = 0; y < ret.height; ++y) {
@@ -15,7 +16,12 @@ export class GameMap {
 
     private tiles: ITile[][] = [];
 
-    constructor(public readonly height: number, public readonly width: number, public readonly dungeonLevel = 1) {
+    constructor(
+        public readonly height: number,
+        public readonly width: number,
+        public readonly entities: Entity[],
+        public readonly dungeonLevel = 1,
+    ) {
         for (let x = 0; x < this.width; ++x) {
             this.tiles[x] = [];
             for (let y = 0; y < this.height; ++y) {

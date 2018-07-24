@@ -3,7 +3,7 @@ import * as ROT from "rot-js";
 import { ConfusedMonsterAi } from "./ConfusedMonsterAi";
 import { Entity } from "./Entity";
 import { IItem } from "./Item";
-import { PLAYER_FOV } from "./main";
+import { CONSTANTS } from "./main";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
 
@@ -18,7 +18,7 @@ export class ConfusionScroll implements IItem {
         const results: ITurnResult[] = [];
         let inFov = false;
 
-        fov.compute(user.x, user.y, PLAYER_FOV, (x, y, r, vis) => {
+        fov.compute(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
             if (x === targetX && y === targetY) {
                 inFov = true;
             }
@@ -60,4 +60,10 @@ export class ConfusionScroll implements IItem {
         return results;
     }
 
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "ConfusionScroll";
+        return ret;
+    }
 }

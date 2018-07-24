@@ -1,10 +1,22 @@
 import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
-import { IItem } from "./Item";
+import { IItem, itemFromObject } from "./Item";
 import { Message } from "./Message";
 import { RenderOrder } from "./RenderOrder";
 import { ITurnResult } from "./TurnResult";
+
+export function inventoryFromObject(obj: any): Inventory {
+    switch (obj._type) {
+        case "Inventory":
+            const ret = new Inventory(obj.capacity);
+            for (const v of obj.items) {
+                ret.items.push(itemFromObject(v));
+            }
+            return ret;
+    }
+    return null;
+}
 
 export class Inventory {
     public owner: Entity;
@@ -94,5 +106,12 @@ export class Inventory {
         results = results.concat(itemUseResults);
 
         return results;
+    }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "Inventory";
+        return ret;
     }
 }

@@ -2,7 +2,7 @@ import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
 import { IItem } from "./Item";
-import { PLAYER_FOV } from "./main";
+import { CONSTANTS } from "./main";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
 
@@ -21,7 +21,7 @@ export class LightningScroll implements IItem {
         let results: ITurnResult[] = [];
 
         let targets: Entity[] = [];
-        fov.compute(user.x, user.y, PLAYER_FOV, (x, y, r, vis) => {
+        fov.compute(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
             targets = targets.concat(entities.filter((e) => e.fighter && e.x === x && e.y === y));
         });
 
@@ -50,5 +50,12 @@ export class LightningScroll implements IItem {
 
     public get name() {
         return this._name;
+    }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "LightningScroll";
+        return ret;
     }
 }

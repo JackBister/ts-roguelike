@@ -41,4 +41,11 @@ export class ConfusedMonsterAi implements IAi {
 
         return results;
     }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "ConfusedMonsterAi";
+        return ret;
+    }
 }

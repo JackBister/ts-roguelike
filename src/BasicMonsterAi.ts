@@ -29,4 +29,11 @@ export class BasicMonsterAi implements IAi {
 
         return results;
     }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "BasicMonsterAi";
+        return ret;
+    }
 }

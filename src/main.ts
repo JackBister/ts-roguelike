@@ -7,29 +7,36 @@ import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
 import { Inventory } from "./Inventory";
+import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
+import { ISavedGame, saveGame } from "./saveGame";
 import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
-const BAR_WIDTH = 20;
+export const CONSTANTS = {
+    BAR_WIDTH: 20,
 
-const CONSOLE_HEIGHT = 50;
-const CONSOLE_WIDTH = 80;
+    MAP_HEIGHT: 43,
+    MAP_WIDTH: 80,
 
-const MAP_HEIGHT = 43;
-const MAP_WIDTH = 80;
+    MESSAGE_HEIGHT: 6,
+    MESSAGE_WIDTH: 58,
+    MESSAGE_X: 22,
 
-const PANEL_HEIGHT = 7;
-const PANEL_Y = CONSOLE_HEIGHT - PANEL_HEIGHT;
+    PANEL_HEIGHT: 7,
+    PLAYER_FOV: 10,
 
-const MESSAGE_HEIGHT = PANEL_HEIGHT - 1;
-const MESSAGE_WIDTH = CONSOLE_WIDTH - BAR_WIDTH - 2;
-const MESSAGE_X = BAR_WIDTH + 2;
+    SCREEN_HEIGHT: 50,
+    SCREEN_WIDTH: 80,
+};
 
-export const PLAYER_FOV = 10;
+const MAIN_MENU_OPTIONS = [
+    "New Game",
+    "Load Game",
+];
 
 const USED_KEYS = [
     ROT.VK_LEFT,
@@ -59,35 +66,22 @@ const USED_KEYS = [
 let con: ROT.Display;
 const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
     (x, y) => {
-        if (x < 0 || x >= MAP_WIDTH
-            || y < 0 || y >= MAP_HEIGHT) {
+        if (x < 0 || x >= CONSTANTS.MAP_WIDTH
+            || y < 0 || y >= CONSTANTS.MAP_HEIGHT) {
             return false;
         }
         return !map.getTile(x, y).blocksSight;
     },
 );
-const entities: Entity[] = [];
-let gameState: GameState = GameState.PLAYER_TURN;
-let inventorySelection = 0;
+let entities: Entity[] = [];
+let gameState: GameState = GameState.MAIN_MENU;
 let lastPointedEntityName: string = "";
 let map: GameMap;
-const messageLog: MessageLog = new MessageLog(MESSAGE_X, MESSAGE_HEIGHT, MESSAGE_WIDTH);
+let menuSelection = 0;
+let messageLog: MessageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
 let panel: ROT.Display;
-const player: Entity = new Entity(
-    CONSOLE_WIDTH,
-    CONSOLE_HEIGHT,
-    "white",
-    "私",
-    true,
-    "Player",
-    RenderOrder.ACTOR,
-    new Fighter(30, 2, 5),
-    null,
-    null,
-    new Inventory(26),
-);
+let player: Entity = null;
 let previousGameState: GameState = null;
-let targetingItem: Entity = null;
 let targetTile: [number, number];
 
 function addResultsToMessageLog(results: ITurnResult[]) {
@@ -122,7 +116,6 @@ function addResultsToMessageLog(results: ITurnResult[]) {
             previousGameState = GameState.PLAYER_TURN;
             gameState = GameState.TARGETING;
 
-            targetingItem = v.targeting;
             targetTile = [player.x, player.y];
         }
     }
@@ -143,7 +136,8 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
         grid.style.display = "none";
     }
 
-    const conHeight = Math.floor(window.innerHeight * CONSOLE_HEIGHT / (CONSOLE_HEIGHT + PANEL_HEIGHT));
+    const conHeight = Math.floor(
+        window.innerHeight * CONSTANTS.SCREEN_HEIGHT / (CONSTANTS.SCREEN_HEIGHT + CONSTANTS.PANEL_HEIGHT));
 
     const [mainWidth, mainHeight] = mainDisplay.computeSize(
         window.innerWidth,
@@ -163,15 +157,28 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
+    if (gameState === GameState.MAIN_MENU) {
+        mainDisplay.clear();
+        uiDisplay.clear();
+        menu(mainDisplay,
+            "Main Menu",
+            MAIN_MENU_OPTIONS,
+            menuSelection,
+            CONSTANTS.SCREEN_WIDTH,
+            CONSTANTS.SCREEN_WIDTH,
+            CONSTANTS.SCREEN_HEIGHT,
+        );
+        return;
+    }
     drawCon(mainDisplay, target);
     if (gameState === GameState.SHOW_INVENTORY) {
         menu(mainDisplay,
             "Inventory",
             player.inventory.items.map((i) => i.name),
-            inventorySelection,
+            menuSelection,
             50,
-            CONSOLE_WIDTH,
-            CONSOLE_HEIGHT);
+            CONSTANTS.SCREEN_WIDTH,
+            CONSTANTS.SCREEN_HEIGHT);
     }
     drawPanel(uiDisplay, target, lastPointedEntityName);
 }
@@ -186,8 +193,8 @@ function drawCon(display: ROT.Display, target: Entity) {
     const conY0 = Math.floor(display.getOptions().height / 2);
 
     // Draw tiles that aren't currently in FOV
-    for (let x = 0; x < MAP_WIDTH; ++x) {
-        for (let y = 0; y < MAP_HEIGHT; ++y) {
+    for (let x = 0; x < CONSTANTS.MAP_WIDTH; ++x) {
+        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; ++y) {
             const finalPosX = x - mapX0 + conX0;
             const finalPosY = y - mapY0 + conY0;
             const tile = map.getTile(x, y);
@@ -202,7 +209,7 @@ function drawCon(display: ROT.Display, target: Entity) {
     }
 
     // Compute current FOV and draw
-    fov.compute(target.x, target.y, PLAYER_FOV, (x, y, r, vis) => {
+    fov.compute(target.x, target.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
         const finalPosX = x - mapX0 + conX0;
         const finalPosY = y - mapY0 + conY0;
         const tile = map.getTile(x, y);
@@ -238,7 +245,17 @@ function drawCon(display: ROT.Display, target: Entity) {
 function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: string) {
     display.clear();
 
-    drawBar(display, 1, 1, BAR_WIDTH, "HP", target.fighter.currHp, target.fighter.maxHp, "red", "darkred");
+    if (target) {
+        drawBar(display,
+            1,
+            1,
+            CONSTANTS.BAR_WIDTH,
+            "HP",
+            target.fighter.currHp,
+            target.fighter.maxHp,
+            "red",
+            "darkred");
+    }
     drawMessageLog(display, messageLog);
 
     if (pointedEntityName) {
@@ -307,17 +324,23 @@ export function main() {
     }
     const container = document.getElementById("app");
 
-    con = new ROT.Display({ height: CONSOLE_HEIGHT, width: CONSOLE_WIDTH, forceSquareRatio: true, fontSize: 20 });
+    con = new ROT.Display({
+        fontSize: 20,
+        forceSquareRatio: true,
+        height: CONSTANTS.SCREEN_HEIGHT,
+        width: CONSTANTS.SCREEN_WIDTH,
+    });
     container.appendChild(con.getContainer());
 
-    panel = new ROT.Display({ height: PANEL_HEIGHT, width: CONSOLE_WIDTH, forceSquareRatio: true, fontSize: 20 });
+    panel = new ROT.Display({
+        fontSize: 20,
+        forceSquareRatio: true,
+        height: CONSTANTS.PANEL_HEIGHT,
+        width: CONSTANTS.SCREEN_WIDTH,
+    });
     container.appendChild(panel.getContainer());
 
     calculateCanvasSizes(con, panel);
-
-    entities.push(player);
-
-    map = new TutorialMapGenerator().generate({ height: MAP_HEIGHT, width: MAP_WIDTH }, player, entities);
 
     window.onkeydown = onKeyDown;
 
@@ -412,7 +435,7 @@ function onMouseMove(evt: MouseEvent) {
     let pointedEntName = "";
     if (filteredEnts.length > 0) {
         const pointedEnt = filteredEnts[filteredEnts.length - 1];
-        fov.compute(player.x, player.y, PLAYER_FOV, (x, y) => {
+        fov.compute(player.x, player.y, CONSTANTS.PLAYER_FOV, (x, y) => {
             if (pointedEnt.x === x && pointedEnt.y === y) {
                 pointedEntName = pointedEnt.name;
             }
@@ -485,7 +508,62 @@ function playerTick(action: IAction) {
     }
     let results: ITurnResult[] = [];
 
-    if (gameState === GameState.PLAYER_TURN) {
+    if (gameState === GameState.MAIN_MENU) {
+        if (action.type === "move") {
+            menuSelection += action.dir[1];
+            if (menuSelection < 0) {
+                menuSelection = 0;
+            } else if (menuSelection >= MAIN_MENU_OPTIONS.length) {
+                menuSelection = MAIN_MENU_OPTIONS.length - 1;
+            }
+        } else if (action.type === "enter") {
+            switch (MAIN_MENU_OPTIONS[menuSelection]) {
+                case "New Game": {
+                    entities = [];
+                    player = new Entity(
+                        CONSTANTS.SCREEN_WIDTH,
+                        CONSTANTS.SCREEN_HEIGHT,
+                        "white",
+                        "私",
+                        true,
+                        "Player",
+                        RenderOrder.ACTOR,
+                        new Fighter(30, 2, 5),
+                        null,
+                        null,
+                        new Inventory(26),
+                    );
+                    entities.push(player);
+
+                    gameState = GameState.PLAYER_TURN;
+
+                    map = new TutorialMapGenerator().generate(
+                        {
+                            height: CONSTANTS.MAP_HEIGHT,
+                            width: CONSTANTS.MAP_WIDTH,
+                        },
+                        player,
+                        entities);
+
+                    messageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
+                    break;
+                }
+                case "Load Game": {
+                    const savedGameString = localStorage.getItem("savedGame");
+                    if (savedGameString) {
+                        const savedGame: ISavedGame = JSON.parse(savedGameString);
+                        const loadedGame = loadGame(savedGame);
+                        entities = loadedGame.entities;
+                        map = loadedGame.gameMap;
+                        gameState = loadedGame.gameState;
+                        messageLog = loadedGame.messageLog;
+                        player = loadedGame.player;
+                    }
+                    break;
+                }
+            }
+        }
+    } else if (gameState === GameState.PLAYER_TURN) {
         if (action.type === "move") {
             let targetEntity: Entity = null;
             {
@@ -517,34 +595,38 @@ function playerTick(action: IAction) {
             gameState = GameState.ENEMY_TURN;
         } else if (action.type === "open-inventory") {
             previousGameState = gameState;
-            inventorySelection = 0;
+            menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
+        } else if (action.type === "exit") {
+            saveGame(player, entities, map, messageLog, gameState);
+            menuSelection = 0;
+            gameState = GameState.MAIN_MENU;
         }
     } else if (gameState === GameState.PLAYER_DEAD) {
         if (action.type === "open-inventory") {
             previousGameState = gameState;
-            inventorySelection = 0;
+            menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         }
     } else if (gameState === GameState.SHOW_INVENTORY) {
         if (action.type === "exit") {
             gameState = previousGameState;
         } else if (action.type === "move") {
-            inventorySelection += action.dir[1];
-            if (inventorySelection < 0) {
-                inventorySelection = 0;
-            } else if (inventorySelection >= player.inventory.items.length) {
-                inventorySelection = player.inventory.items.length - 1;
+            menuSelection += action.dir[1];
+            if (menuSelection < 0) {
+                menuSelection = 0;
+            } else if (menuSelection >= player.inventory.items.length) {
+                menuSelection = player.inventory.items.length - 1;
             }
         } else if (action.type === "enter") {
-            results = results.concat(player.inventory.useItem(inventorySelection, entities, fov));
-            if (inventorySelection >= player.inventory.items.length) {
-                inventorySelection = player.inventory.items.length - 1;
+            results = results.concat(player.inventory.useItem(menuSelection, entities, fov));
+            if (menuSelection >= player.inventory.items.length) {
+                menuSelection = player.inventory.items.length - 1;
             }
         } else if (action.type === "drop") {
-            results = results.concat(player.inventory.dropItem(inventorySelection, entities));
-            if (inventorySelection >= player.inventory.items.length) {
-                inventorySelection = player.inventory.items.length - 1;
+            results = results.concat(player.inventory.dropItem(menuSelection, entities));
+            if (menuSelection >= player.inventory.items.length) {
+                menuSelection = player.inventory.items.length - 1;
             }
         }
     } else if (gameState === GameState.TARGETING) {
@@ -555,10 +637,10 @@ function playerTick(action: IAction) {
             }
         } else if (action.type === "enter") {
             results = results.concat(
-                player.inventory.useItem(inventorySelection, entities, fov, targetTile[0], targetTile[1]),
+                player.inventory.useItem(menuSelection, entities, fov, targetTile[0], targetTile[1]),
             );
-            if (inventorySelection >= player.inventory.items.length) {
-                inventorySelection = player.inventory.items.length - 1;
+            if (menuSelection >= player.inventory.items.length) {
+                menuSelection = player.inventory.items.length - 1;
             }
             gameState = previousGameState;
         } else if (action.type === "exit") {

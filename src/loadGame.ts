@@ -1,0 +1,55 @@
+
+import { aiFromObject } from "./Ai";
+import { Entity } from "./Entity";
+import { fighterFromObject } from "./Fighter";
+import { GameMap } from "./GameMap";
+import { GameState } from "./GameState";
+import { inventoryFromObject } from "./Inventory";
+import { itemFromObject } from "./Item";
+import { MessageLog } from "./MessageLog";
+import { ISavedGame } from "./saveGame";
+
+interface ILoadedGame {
+    entities: Entity[];
+    gameMap: GameMap;
+    gameState: GameState;
+    messageLog: MessageLog;
+    player: Entity;
+}
+
+export function loadGame(savedGame: ISavedGame) {
+    const ret: ILoadedGame = { entities: [], gameMap: null, gameState: null, messageLog: null, player: null };
+    ret.gameMap = GameMap.fromOtherMap(savedGame.gameMap);
+    ret.gameState = savedGame.gameState;
+    ret.messageLog = MessageLog.fromOtherMessageLog(savedGame.messageLog);
+    for (const e of savedGame.entities) {
+        const ne = new Entity(
+            e.x,
+            e.y,
+            e.color,
+            e.symbol,
+            e.isBlocking,
+            e.name,
+            e.renderOrder,
+        );
+        if (e.ai) {
+            ne.ai = aiFromObject(e.ai);
+            ne.ai.owner = ne;
+        }
+        if (e.fighter) {
+            ne.fighter = fighterFromObject(e.fighter);
+            ne.fighter.owner = ne;
+        }
+        if (e.inventory) {
+            ne.inventory = inventoryFromObject(e.inventory);
+            ne.inventory.owner = ne;
+        }
+        if (e.item) {
+            ne.item = itemFromObject(e.item);
+            ne.item.owner = ne;
+        }
+        ret.entities.push(ne);
+    }
+    ret.player = ret.entities[savedGame.playerIndex];
+    return ret;
+}

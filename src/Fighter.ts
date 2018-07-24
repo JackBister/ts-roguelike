@@ -2,6 +2,16 @@ import { Entity } from "./Entity";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
 
+export function fighterFromObject(obj: any): Fighter {
+    switch (obj._type) {
+        case "Fighter":
+            const ret = new Fighter(obj.maxHp, obj.defense, obj.power);
+            ret.currHp = obj.currHp;
+            return ret;
+    }
+    return null;
+}
+
 export class Fighter {
     public owner: Entity;
 
@@ -59,5 +69,12 @@ export class Fighter {
         }
 
         return results;
+    }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "Fighter";
+        return ret;
     }
 }

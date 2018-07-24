@@ -55,4 +55,11 @@ export class HealingPotion implements IItem {
     public get name() {
         return this._name;
     }
+
+    public toJSON() {
+        const ret = { ...(this as any) };
+        ret.owner = undefined;
+        ret._type = "HealingPotion";
+        return ret;
+    }
 }

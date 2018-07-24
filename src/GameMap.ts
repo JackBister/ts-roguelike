@@ -15,7 +15,7 @@ export class GameMap {
 
     private tiles: ITile[][] = [];
 
-    constructor(public readonly height: number, public readonly width: number) {
+    constructor(public readonly height: number, public readonly width: number, public readonly dungeonLevel = 1) {
         for (let x = 0; x < this.width; ++x) {
             this.tiles[x] = [];
             for (let y = 0; y < this.height; ++y) {

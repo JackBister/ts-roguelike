@@ -208,8 +208,11 @@ function drawCon(display: ROT.Display, target: Entity) {
         }
     }
 
+    const visibleCoordinates: Array<[number, number]> = [];
+
     // Compute current FOV and draw
     fov.compute(target.x, target.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
+        visibleCoordinates.push([x, y]);
         const finalPosX = x - mapX0 + conX0;
         const finalPosY = y - mapY0 + conY0;
         const tile = map.getTile(x, y);
@@ -236,6 +239,19 @@ function drawCon(display: ROT.Display, target: Entity) {
             }
         }
     });
+
+    entities
+        .filter((e) => e.stairs)
+        .forEach((e) => {
+            const finalPosX = e.x - mapX0 + conX0;
+            const finalPosY = e.y - mapY0 + conY0;
+            const tile = map.getTile(e.x, e.y);
+            if (tile.isSeen) {
+                if (!visibleCoordinates.some((v) => v[0] === e.x && v[1] === e.y)) {
+                    display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.darkGround);
+                }
+            }
+        });
 
     // HACK: Redraw the player. Normally the FOV stuff above should work,
     // but it doesn't on iOS (player gets drawn beneath corpses) and I don't see why.

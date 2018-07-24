@@ -8,6 +8,7 @@ import { inventoryFromObject } from "./Inventory";
 import { itemFromObject } from "./Item";
 import { MessageLog } from "./MessageLog";
 import { ISavedGame } from "./saveGame";
+import { Stairs } from "./Stairs";
 
 interface ILoadedGame {
     entities: Entity[];
@@ -47,6 +48,10 @@ export function loadGame(savedGame: ISavedGame) {
         if (e.item) {
             ne.item = itemFromObject(e.item);
             ne.item.owner = ne;
+        }
+        if (e.stairs) {
+            ne.stairs = new Stairs(e.stairs.floor);
+            ne.stairs.owner = ne;
         }
         ret.entities.push(ne);
     }

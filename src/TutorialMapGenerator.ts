@@ -10,6 +10,7 @@ import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator"
 import { randomInt } from "./randomInt";
 import { Rect } from "./Rect";
 import { RenderOrder } from "./RenderOrder";
+import { Stairs } from "./Stairs";
 
 export class TutorialMapGenerator implements IMapGenerator {
     private opts: IGameMapOptions;
@@ -65,6 +66,23 @@ export class TutorialMapGenerator implements IMapGenerator {
             player.x = room0center[0];
             player.y = room0center[1];
         }
+
+        const lastRoomCenter = rooms[rooms.length - 1].getCenter();
+        entities.push(new Entity(
+            lastRoomCenter[0],
+            lastRoomCenter[1],
+            "white",
+            ">",
+            false,
+            "Stairs",
+            RenderOrder.STAIRS,
+            null,
+            null,
+            null,
+            null,
+            new Stairs(ret.dungeonLevel + 1),
+        ));
+
         return ret;
     }
 

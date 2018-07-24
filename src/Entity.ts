@@ -6,6 +6,7 @@ import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
 import { IItem } from "./Item";
 import { RenderOrder } from "./RenderOrder";
+import { Stairs } from "./Stairs";
 
 export class Entity {
     constructor(
@@ -20,6 +21,7 @@ export class Entity {
         public ai: IAi = null,
         public item: IItem = null,
         public inventory: Inventory = null,
+        public stairs: Stairs = null,
     ) {
         if (this.fighter) {
             this.fighter.owner = this;
@@ -35,6 +37,10 @@ export class Entity {
 
         if (this.inventory) {
             this.inventory.owner = this;
+        }
+
+        if (this.stairs) {
+            this.stairs.owner = this;
         }
     }
 

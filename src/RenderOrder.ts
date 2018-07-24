@@ -1,6 +1,7 @@
 
 export enum RenderOrder {
-    CORPSE = 0,
-    ITEM = 1,
-    ACTOR = 2,
+    STAIRS = 0,
+    CORPSE = 1,
+    ITEM = 2,
+    ACTOR = 3,
 }

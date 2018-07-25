@@ -692,7 +692,7 @@ function playerTick(action: IAction) {
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         } else if (action.type === "exit") {
-            saveGame(player, entities, maps, messageLog, gameState);
+            saveGame(player, entities, maps, currentMap, messageLog, gameState);
             menuSelection = 0;
             gameState = GameState.MAIN_MENU;
             entities = [];

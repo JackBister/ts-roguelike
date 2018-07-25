@@ -282,7 +282,7 @@ function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: stri
         display.drawText(1, 0, pointedEntityName);
     }
 
-    display.drawText(1, 2, `Floor: ${currentMap + 1}`);
+    display.drawText(1, 2, `Floor: ${maps[currentMap].dungeonLevel}`);
 }
 
 function drawBar(display: ROT.Display, x: number, y: number, totalWidth: number, name: string, value: number,

@@ -138,6 +138,7 @@ function addResultsToMessageLog(results: ITurnResult[]) {
                 );
                 previousGameState = gameState;
                 gameState = GameState.LEVEL_UP;
+                menuSelection = 0;
             }
         }
     }

@@ -350,7 +350,7 @@ function drawMessageLog(display: ROT.Display, log: MessageLog) {
         display.drawText(
             messageLog.x,
             y,
-            v.text,
+            `%c{${v.color}}${v.text}`,
             messageLog.width,
         );
         y++;

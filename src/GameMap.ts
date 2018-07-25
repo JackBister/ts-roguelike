@@ -50,7 +50,7 @@ export class GameMap {
             newEntities.push(ne);
         }
 
-        const ret = new GameMap(mapToCopy.height, mapToCopy.width, newEntities);
+        const ret = new GameMap(mapToCopy.height, mapToCopy.width, newEntities, mapToCopy.dungeonLevel);
 
         for (let x = 0; x < ret.width; ++x) {
             for (let y = 0; y < ret.height; ++y) {

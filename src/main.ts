@@ -37,8 +37,8 @@ export const CONSTANTS = {
 };
 
 const MAIN_MENU_OPTIONS = [
-    "New Game",
     "Load Game",
+    "New Game",
 ];
 
 const USED_KEYS = [

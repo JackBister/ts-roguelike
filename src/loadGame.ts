@@ -6,6 +6,7 @@ import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
 import { inventoryFromObject } from "./Inventory";
 import { itemFromObject } from "./Item";
+import { Level } from "./Level";
 import { MessageLog } from "./MessageLog";
 import { ISavedGame } from "./saveGame";
 import { Stairs } from "./Stairs";
@@ -54,6 +55,10 @@ export function loadGame(savedGame: ISavedGame) {
         if (e.stairs) {
             ne.stairs = new Stairs(e.stairs.floor);
             ne.stairs.owner = ne;
+        }
+        if (e.level) {
+            ne.level = new Level(e.level.currentLevel, e.level.currentXp, e.level.levelUpBase, e.level.levelUpFactor);
+            ne.level.owner = ne;
         }
         ret.entities.push(ne);
     }

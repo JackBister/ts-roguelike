@@ -12,7 +12,7 @@ export function aiFromObject(obj: any) {
             return new BasicMonsterAi();
             break;
         case "ConfusedMonsterAi":
-            return new ConfusedMonsterAi(obj.previousAi, obj.numTurns);
+            return new ConfusedMonsterAi(aiFromObject(obj.previousAi), obj.numTurns);
             break;
     }
     return null;

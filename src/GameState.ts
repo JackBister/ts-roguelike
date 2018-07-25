@@ -6,4 +6,6 @@ export enum GameState {
     SHOW_INVENTORY,
     TARGETING,
     MAIN_MENU,
+    LEVEL_UP,
+    SHOW_CHARACTER_PANEL,
 }

@@ -9,4 +9,5 @@ export interface ITurnResult {
     message?: Message;
     target?: Entity;
     targeting?: Entity;
+    xp?: number;
 }

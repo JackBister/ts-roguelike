@@ -8,7 +8,17 @@ import { randomInt } from "./randomInt";
 import { ITurnResult } from "./TurnResult";
 
 export class ConfusedMonsterAi implements IAi {
-    public owner: Entity;
+    private _owner: Entity;
+
+    // HACK: When deserializing, we need to set the owner of the previousAi as well.
+    public set owner(val: Entity) {
+        this._owner = val;
+        this.previousAi.owner = val;
+    }
+
+    public get owner() {
+        return this._owner;
+    }
 
     constructor(private previousAi: IAi, private numTurns: number) {}
 

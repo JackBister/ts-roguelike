@@ -240,7 +240,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Orc",
                         RenderOrder.ACTOR,
-                        new Fighter(10, 0, 3),
+                        new Fighter(10, 0, 3, 35),
                         new BasicMonsterAi(),
                     );
                 } else {
@@ -252,7 +252,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Troll",
                         RenderOrder.ACTOR,
-                        new Fighter(16, 1, 4),
+                        new Fighter(16, 1, 4, 100),
                         new BasicMonsterAi(),
                     );
                 }

@@ -1,5 +1,6 @@
 import * as ROT from "rot-js";
 import { IAction } from "./Action";
+import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { enterStairs } from "./enterStairs";
@@ -8,13 +9,13 @@ import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
 import { Inventory } from "./Inventory";
+import { Level } from "./Level";
 import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
 import { ISavedGame, saveGame } from "./saveGame";
-import { Stairs } from "./Stairs";
 import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
@@ -60,6 +61,8 @@ const USED_KEYS = [
     ROT.VK_I,
 
     ROT.VK_D,
+    ROT.VK_C,
+    ROT.VK_Z,
 
     ROT.VK_ESCAPE,
     ROT.VK_RETURN,
@@ -122,6 +125,21 @@ function addResultsToMessageLog(results: ITurnResult[]) {
 
             targetTile = [player.x, player.y];
         }
+
+        if (v.xp) {
+            messageLog.addMessage(
+                new Message(`You gain ${v.xp} experience points.`, "white"),
+            );
+            const didLevelUp = Level.addXp(player.level, v.xp);
+
+            if (didLevelUp) {
+                messageLog.addMessage(
+                    new Message("You have leveled up!", "yellow"),
+                );
+                previousGameState = gameState;
+                gameState = GameState.LEVEL_UP;
+            }
+        }
     }
 }
 
@@ -175,7 +193,25 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
         return;
     }
     drawCon(mainDisplay, target);
-    if (gameState === GameState.SHOW_INVENTORY) {
+    if (gameState === GameState.LEVEL_UP) {
+        menu(mainDisplay,
+            "Level up! Choose a stat to raise:",
+            [
+                `HP +20 (current: ${player.fighter.maxHp})`,
+                `Attack +1 (current: ${player.fighter.power})`,
+                `Defense +1 (current: ${player.fighter.defense})`,
+            ],
+            menuSelection,
+            40,
+            CONSTANTS.SCREEN_WIDTH,
+            CONSTANTS.SCREEN_HEIGHT);
+    } else if (gameState === GameState.SHOW_CHARACTER_PANEL) {
+        characterScreen(mainDisplay,
+            player,
+            50,
+            CONSTANTS.SCREEN_WIDTH,
+            CONSTANTS.SCREEN_HEIGHT);
+    } else if (gameState === GameState.SHOW_INVENTORY) {
         menu(mainDisplay,
             "Inventory",
             player.inventory.items.map((i) => i.name),
@@ -427,6 +463,12 @@ function onKeyDown(evt: KeyboardEvent) {
         case ROT.VK_D:
             action = { type: "drop" };
             break;
+        case ROT.VK_C:
+            action = { type: "open-character-panel" };
+            break;
+        case ROT.VK_Z:
+            action = { type: "wait" };
+            break;
         case ROT.VK_ESCAPE:
             action = { type: "exit" };
             break;
@@ -532,7 +574,28 @@ function playerTick(action: IAction) {
     }
     let results: ITurnResult[] = [];
 
-    if (gameState === GameState.MAIN_MENU) {
+    if (gameState === GameState.LEVEL_UP) {
+        if (action.type === "move") {
+            menuSelection += action.dir[1];
+            if (menuSelection < 0) {
+                menuSelection = 0;
+            } else if (menuSelection >= 3) {
+                menuSelection = 2;
+            }
+        } else if (action.type === "enter") {
+            if (menuSelection === 0) {
+                player.fighter.maxHp += 20;
+                player.fighter.currHp += 20;
+            } else if (menuSelection === 1) {
+                player.fighter.power += 1;
+            } else if (menuSelection === 2) {
+                player.fighter.defense += 1;
+            }
+            // HACK: Using previousState seems to get into some edge case where
+            // if you level up from killing an enemy from the inventory you can't close the inventory.
+            gameState = GameState.PLAYER_TURN;
+        }
+    } else if (gameState === GameState.MAIN_MENU) {
         if (action.type === "move") {
             menuSelection += action.dir[1];
             if (menuSelection < 0) {
@@ -556,6 +619,8 @@ function playerTick(action: IAction) {
                         null,
                         null,
                         new Inventory(26),
+                        null,
+                        new Level(),
                     );
                     entities.push(player);
 
@@ -618,6 +683,9 @@ function playerTick(action: IAction) {
                 messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
             }
             gameState = GameState.ENEMY_TURN;
+        } else if (action.type === "open-character-panel") {
+            previousGameState = gameState;
+            gameState = GameState.SHOW_CHARACTER_PANEL;
         } else if (action.type === "open-inventory") {
             previousGameState = gameState;
             menuSelection = 0;
@@ -640,12 +708,21 @@ function playerTick(action: IAction) {
                     currentMap + 1,
                 );
             }
+        } else if (action.type === "wait") {
+            messageLog.addMessage(
+                new Message("You wait for a moment.", "white"),
+            );
+            gameState = GameState.ENEMY_TURN;
         }
     } else if (gameState === GameState.PLAYER_DEAD) {
         if (action.type === "open-inventory") {
             previousGameState = gameState;
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
+        }
+    } else if (gameState === GameState.SHOW_CHARACTER_PANEL) {
+        if (action.type === "exit") {
+            gameState = previousGameState;
         }
     } else if (gameState === GameState.SHOW_INVENTORY) {
         if (action.type === "exit") {

@@ -3,8 +3,10 @@ export type IAction = IDropAction
                     | IEnterAction
                     | IExitAction
                     | IMoveAction
+                    | IOpenCharacterPanelAction
                     | IOpenInventoryAction
-                    | IPickupAction;
+                    | IPickupAction
+                    | IWaitAction;
 
 export interface IDropAction {
     type: "drop";
@@ -23,10 +25,18 @@ export interface IMoveAction {
     dir: [number, number];
 }
 
+export interface IOpenCharacterPanelAction {
+    type: "open-character-panel";
+}
+
 export interface IOpenInventoryAction {
     type: "open-inventory";
 }
 
 export interface IPickupAction {
     type: "pickup";
+}
+
+export interface IWaitAction {
+    type: "wait";
 }

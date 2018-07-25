@@ -18,15 +18,9 @@ export class Fighter {
     public currHp: number;
     public maxHp: number;
 
-    public defense: number;
-    public power: number;
-
-    constructor(hp: number, defense: number, power: number) {
+    constructor(hp: number, public defense: number, public power: number, public xp: number = 0) {
         this.currHp = hp;
         this.maxHp = hp;
-
-        this.defense = defense;
-        this.power = power;
     }
 
     public attack(target: Entity) {
@@ -65,6 +59,7 @@ export class Fighter {
         if (this.currHp <= 0) {
             results.push({
                 dead: this.owner,
+                xp: this.xp,
             });
         }
 

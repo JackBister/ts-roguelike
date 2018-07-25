@@ -5,6 +5,7 @@ import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
 import { IItem } from "./Item";
+import { Level } from "./Level";
 import { RenderOrder } from "./RenderOrder";
 import { Stairs } from "./Stairs";
 
@@ -22,6 +23,7 @@ export class Entity {
         public item: IItem = null,
         public inventory: Inventory = null,
         public stairs: Stairs = null,
+        public level: Level = null,
     ) {
         if (this.fighter) {
             this.fighter.owner = this;
@@ -41,6 +43,10 @@ export class Entity {
 
         if (this.stairs) {
             this.stairs.owner = this;
+        }
+
+        if (this.level) {
+            this.level.owner = this;
         }
     }
 

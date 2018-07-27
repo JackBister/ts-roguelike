@@ -668,6 +668,7 @@ function playerTick(action: IAction) {
                     if (savedGameString) {
                         const savedGame: ISavedGame = JSON.parse(savedGameString);
                         const loadedGame = loadGame(savedGame);
+                        currentMap = loadedGame.currentMap;
                         entities = loadedGame.entities;
                         maps = loadedGame.gameMaps;
                         gameState = loadedGame.gameState;

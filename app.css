@@ -35,8 +35,9 @@ body {
     color: white;
     display: none;
     font-size: 28pt;
+    padding: 1em;
     position: absolute;
-    right: 1em;
-    top: 1em;
+    right: 0;
+    top: 0;
     z-index: 2;
 }

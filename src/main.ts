@@ -425,6 +425,9 @@ export function main() {
         draw(con, panel, player);
     };
 
+    const touchIcons = document.getElementById("touch-icons");
+    touchIcons.ontouchstart = (evt) => evt.stopPropagation();
+
     window.ontouchstart = onTouchStart;
     window.ontouchend = (evt) => {
         evt.preventDefault();

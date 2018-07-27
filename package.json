@@ -7,6 +7,7 @@
     },
     "dependencies": {
         "@types/rot-js": "0.6.3",
+        "open-iconic": "1.1.1",
         "rot-js": "0.6.5",
 
         "ts-loader": "4.4.2",

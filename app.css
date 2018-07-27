@@ -17,10 +17,26 @@ body {
     width:100%;
 
     position: absolute;
+
+    z-index: 1;
 }
 
 #grid div {
     border-color: white;
     border-width: 1px;
     border-style: solid;
+}
+
+.oi {
+    margin-left: 1em;
+}
+
+#touch-icons {
+    color: white;
+    display: none;
+    font-size: 28pt;
+    position: absolute;
+    right: 1em;
+    top: 1em;
+    z-index: 2;
 }

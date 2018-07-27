@@ -3,6 +3,7 @@ import { IAction } from "./Action";
 import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { killMonster, killPlayer } from "./deathFunctions";
+import { drawTouchIcons } from "./drawTouchIcons";
 import { enterStairs } from "./enterStairs";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
@@ -90,6 +91,7 @@ let panel: ROT.Display;
 let player: Entity = null;
 let previousGameState: GameState = null;
 let targetTile: [number, number];
+let isTouchDevice = false;
 
 function addResultsToMessageLog(results: ITurnResult[]) {
     for (const v of results) {
@@ -150,13 +152,19 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
     htmlBody.style.widows = window.innerWidth + "px";
 
     const grid = document.getElementById("grid");
+    const touchIcons = document.getElementById("touch-icons");
     if (navigator &&
         (navigator.maxTouchPoints > 0
             || navigator.msMaxTouchPoints > 0
-            || /iPad|iPhone|iPod/.test(navigator.platform))) {
+            || /iPad|iPhone|iPod/.test(navigator.platform))
+    ) {
+        isTouchDevice = true;
         grid.style.display = "grid";
+        touchIcons.style.display = "block";
     } else {
+        isTouchDevice = false;
         grid.style.display = "none";
+        touchIcons.style.display = "none";
     }
 
     const conHeight = Math.floor(
@@ -180,6 +188,9 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
+    if (isTouchDevice) {
+        drawTouchIcons(gameState, player, entities, playerTick);
+    }
     if (gameState === GameState.MAIN_MENU) {
         mainDisplay.clear();
         uiDisplay.clear();
@@ -538,6 +549,7 @@ function onTouchStart(evt: TouchEvent) {
         }
 
         if (isMove) {
+            /*
             if (to[0] === -1 && to[1] === -1) {
                 if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
                     action = { type: "exit" };
@@ -551,12 +563,18 @@ function onTouchStart(evt: TouchEvent) {
                     action = { type: "move", dir: to };
                 }
             } else {
-                action = { type: "move", dir: to };
-            }
+            */
+            action = { type: "move", dir: to };
+            // }
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {
-            if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
+            if (gameState === GameState.MAIN_MENU
+                || gameState === GameState.SHOW_INVENTORY
+                || gameState === GameState.TARGETING
+                || gameState === GameState.LEVEL_UP
+                || entities.some((e) => e.stairs && e.x === player.x && e.y === player.y)
+            ) {
                 action = { type: "enter" };
             } else {
                 action = { type: "open-inventory" };

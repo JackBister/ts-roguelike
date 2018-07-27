@@ -35,6 +35,9 @@ export const CONSTANTS = {
 
     SCREEN_HEIGHT: 50,
     SCREEN_WIDTH: 80,
+
+    // If a direction is held in touch mode, the player will move every TOUCH_MOVE_REPEAT_DELAY ms
+    TOUCH_MOVE_REPEAT_DELAY: 300,
 };
 
 const MAIN_MENU_OPTIONS = [
@@ -91,6 +94,7 @@ let panel: ROT.Display;
 let player: Entity = null;
 let previousGameState: GameState = null;
 let targetTile: [number, number];
+let touchMoveRepeater: number;
 let isTouchDevice = false;
 
 function addResultsToMessageLog(results: ITurnResult[]) {
@@ -422,7 +426,13 @@ export function main() {
     };
 
     window.ontouchstart = onTouchStart;
-    window.ontouchend = (evt) => evt.preventDefault();
+    window.ontouchend = (evt) => {
+        evt.preventDefault();
+        if (touchMoveRepeater) {
+            window.clearInterval(touchMoveRepeater);
+            touchMoveRepeater = null;
+        }
+    };
 
     draw(con, panel, player);
 }
@@ -550,6 +560,15 @@ function onTouchStart(evt: TouchEvent) {
 
         if (isMove) {
             action = { type: "move", dir: to };
+            if (touchMoveRepeater) {
+                window.clearInterval(touchMoveRepeater);
+                touchMoveRepeater = null;
+            }
+            touchMoveRepeater = window.setInterval(() => {
+                playerTick(action);
+            }
+            , CONSTANTS.TOUCH_MOVE_REPEAT_DELAY,
+        );
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {

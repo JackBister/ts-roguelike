@@ -549,23 +549,7 @@ function onTouchStart(evt: TouchEvent) {
         }
 
         if (isMove) {
-            /*
-            if (to[0] === -1 && to[1] === -1) {
-                if (gameState === GameState.SHOW_INVENTORY || gameState === GameState.TARGETING) {
-                    action = { type: "exit" };
-                } else {
-                    action = { type: "move", dir: to };
-                }
-            } else if (to[0] === 1 && to[1] === -1) {
-                if (gameState === GameState.SHOW_INVENTORY) {
-                    action = { type: "drop" };
-                } else {
-                    action = { type: "move", dir: to };
-                }
-            } else {
-            */
             action = { type: "move", dir: to };
-            // }
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {

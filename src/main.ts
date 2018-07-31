@@ -283,9 +283,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         // TODO: Probably very slow with lots of entities + big rooms
         const visEnts = entities
             .filter((e) => e.x === x && e.y === y)
-            .sort((e) => {
-                return e.renderOrder;
-            });
+            .sort((e) => e.renderOrder);
         if (visEnts.length > 0) {
             const e = visEnts[visEnts.length - 1];
             if (gameState === GameState.TARGETING && targetTile[0] === x && targetTile[1] === y) {

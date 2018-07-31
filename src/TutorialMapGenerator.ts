@@ -8,6 +8,7 @@ import { HealingPotion } from "./HealingPotion";
 import { LightningScroll } from "./LightningScroll";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
+import { fromDungeonLevel, randomChoiceFromMap } from "./randomUtils";
 import { Rect } from "./Rect";
 import { RenderOrder } from "./RenderOrder";
 import { Stairs } from "./Stairs";
@@ -20,8 +21,6 @@ export class TutorialMapGenerator implements IMapGenerator {
             height: opts.height || DEFAULT_OPTIONS.height,
             width: opts.width || DEFAULT_OPTIONS.width,
 
-            maxItemsPerRoom: opts.maxItemsPerRoom || DEFAULT_OPTIONS.maxItemsPerRoom,
-            maxMonstersPerRoom: opts.maxMonstersPerRoom || DEFAULT_OPTIONS.maxMonstersPerRoom,
             maxRooms: opts.maxRooms || DEFAULT_OPTIONS.maxRooms,
             roomMaxSize: opts.roomMaxSize || DEFAULT_OPTIONS.roomMaxSize,
             roomMinSize: opts.roomMinSize || DEFAULT_OPTIONS.roomMinSize,
@@ -57,7 +56,7 @@ export class TutorialMapGenerator implements IMapGenerator {
 
                 numRooms++;
                 rooms.push(newRoom);
-                this.placeEntities(newRoom, entities);
+                this.placeEntities(newRoom, entities, dungeonLevel);
             }
         }
 
@@ -108,7 +107,6 @@ export class TutorialMapGenerator implements IMapGenerator {
             || x1 > this.opts.width || x2 > this.opts.width
         ) {
             throw new Error(`Out of bounds! (Width: ${this.opts.width}, x1: ${x1}, x2: ${x2})`);
-            return;
         }
 
         for (let x = Math.min(x1, x2); x < Math.max(x1, x2) + 1; ++x) {
@@ -159,17 +157,31 @@ export class TutorialMapGenerator implements IMapGenerator {
         }
     }
 
-    private placeEntities(room: Rect, entities: Entity[]) {
-        const numItems = randomInt(0, this.opts.maxItemsPerRoom);
-        const numMonsters = randomInt(0, this.opts.maxMonstersPerRoom);
+    private placeEntities(room: Rect, entities: Entity[], currentLevel: number) {
+        const maxItemsPerRoom = fromDungeonLevel([[1, 1], [4, 2]], currentLevel);
+        const maxMonstersPerRoom = fromDungeonLevel([[1, 2], [4, 3], [6, 5]], currentLevel);
+
+        const numItems = randomInt(0, maxItemsPerRoom);
+        const numMonsters = randomInt(0, maxMonstersPerRoom);
+
+        const monsterChances = {
+            orc: 80,
+            troll: fromDungeonLevel([[3, 15], [5, 30], [7, 60]], currentLevel),
+        };
+        const itemChances = {
+            confusionScroll: fromDungeonLevel([[2, 10]], currentLevel),
+            fireballScroll: fromDungeonLevel([[6, 25]], currentLevel),
+            healingPotion: 35,
+            lightningScroll: fromDungeonLevel([[4, 25]], currentLevel),
+        };
 
         for (let i = 0; i < numItems; ++i) {
             const x = randomInt(room.getX() + 1, room.getX2() - 1);
             const y = randomInt(room.getY() + 1, room.getY2() - 1);
             if (!entities.some((e) => e.x === x && e.y === y)) {
-                const itemChance = randomInt(0, 100);
                 let item: Entity = null;
-                if (itemChance < 70) {
+                const itemChoice = randomChoiceFromMap(itemChances);
+                if (itemChoice === "lightningScroll") {
                     item = new Entity(
                         x,
                         y,
@@ -180,9 +192,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         RenderOrder.ITEM,
                         null,
                         null,
-                        new LightningScroll(20, 5),
+                        new LightningScroll(40, 5),
                     );
-                } else if (itemChance < 80) {
+                } else if (itemChoice === "fireballScroll") {
                     item = new Entity(
                         x,
                         y,
@@ -193,9 +205,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         RenderOrder.ITEM,
                         null,
                         null,
-                        new FireballScroll(12, 3),
+                        new FireballScroll(25, 3),
                     );
-                } else if (itemChance < 90) {
+                } else if (itemChoice === "confusionScroll") {
                     item = new Entity(
                         x,
                         y,
@@ -208,7 +220,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                         null,
                         new ConfusionScroll(10),
                     );
-                } else {
+                } else if (itemChoice === "healingPotion") {
                     item = new Entity(
                         x,
                         y,
@@ -219,7 +231,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                         RenderOrder.ITEM,
                         null,
                         null,
-                        new HealingPotion(4),
+                        new HealingPotion(40),
                     );
                 }
                 entities.push(item);
@@ -231,7 +243,8 @@ export class TutorialMapGenerator implements IMapGenerator {
             const y = randomInt(room.getY() + 1, room.getY2() - 1);
             if (!entities.some((e) => e.x === x && e.y === y)) {
                 let monster: Entity = null;
-                if (randomInt(0, 100) < 80) {
+                const monsterChoice = randomChoiceFromMap(monsterChances);
+                if (monsterChoice === "orc") {
                     monster = new Entity(
                         x,
                         y,
@@ -240,10 +253,10 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Orc",
                         RenderOrder.ACTOR,
-                        new Fighter(10, 0, 3, 35),
+                        new Fighter(20, 0, 4, 35),
                         new BasicMonsterAi(),
                     );
-                } else {
+                } else if (monsterChoice === "troll") {
                     monster = new Entity(
                         x,
                         y,
@@ -252,7 +265,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Troll",
                         RenderOrder.ACTOR,
-                        new Fighter(16, 1, 4, 100),
+                        new Fighter(30, 2, 8, 100),
                         new BasicMonsterAi(),
                     );
                 }

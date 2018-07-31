@@ -638,7 +638,7 @@ function playerTick(action: IAction) {
                         true,
                         "Player",
                         RenderOrder.ACTOR,
-                        new Fighter(30, 2, 5),
+                        new Fighter(100, 1, 4),
                         null,
                         null,
                         new Inventory(26),

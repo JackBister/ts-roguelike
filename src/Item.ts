@@ -74,7 +74,6 @@ export function itemFromObject(obj: any): Entity {
                 null,
                 null,
                 null,
-                null,
                 new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
             );
         case "Sword":
@@ -87,7 +86,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Sword",
                 RenderOrder.ITEM,
-                null,
                 null,
                 null,
                 null,

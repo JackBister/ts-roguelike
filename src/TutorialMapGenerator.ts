@@ -255,7 +255,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         null,
                         null,
                         null,
-                        null,
                         new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
                     );
                 } else if (itemChoice === "sword") {
@@ -268,7 +267,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Sword",
                         RenderOrder.ITEM,
-                        null,
                         null,
                         null,
                         null,

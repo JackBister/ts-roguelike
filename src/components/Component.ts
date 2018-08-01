@@ -1,5 +1,6 @@
 import { AiComponent } from "./AiComponent";
 import { FighterComponent } from "./FighterComponent";
+import { LevelComponent } from "./LevelComponent";
 import { StairComponent } from "./StairComponent";
 
 export interface IComponent {
@@ -10,5 +11,6 @@ export interface IComponent {
 }
 
 export type Component = AiComponent
-                      | FighterComponent
-                      | StairComponent;
+    | FighterComponent
+    | LevelComponent
+    | StairComponent;

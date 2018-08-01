@@ -5,7 +5,6 @@ import { Equippable } from "./Equippable";
 import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
 import { IItem } from "./Item";
-import { Level } from "./Level";
 import { RenderOrder } from "./RenderOrder";
 import { Stairs } from "./Stairs";
 
@@ -22,7 +21,6 @@ export class Entity {
         public item: IItem = null,
         public inventory: Inventory = null,
         public stairs: Stairs = null,
-        public level: Level = null,
         public equipment: Equipment = null,
         public equippable: Equippable = null,
         public isActive: boolean = true,
@@ -38,10 +36,6 @@ export class Entity {
 
         if (this.stairs) {
             this.stairs.owner = this;
-        }
-
-        if (this.level) {
-            this.level.owner = this;
         }
 
         if (this.equipment) {

@@ -4,6 +4,7 @@ import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { ComponentService } from "./components/Component.service";
 import { FighterComponent } from "./components/FighterComponent";
+import { LevelComponent } from "./components/LevelComponent";
 import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
@@ -13,10 +14,10 @@ import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
 import { AttackEvent } from "./events/AttackEvent";
+import { GainXpEvent } from "./events/GainXpEvent";
 import { ThinkEvent } from "./events/ThinkEvent";
 import { GameState } from "./GameState";
 import { Inventory } from "./Inventory";
-import { Level } from "./Level";
 import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
@@ -166,9 +167,11 @@ function addResultsToMessageLog(results: ITurnResult[]) {
             messageLog.addMessage(
                 new Message(`You gain ${v.xp} experience points.`, "white"),
             );
-            const didLevelUp = Level.addXp(player.level, v.xp);
 
-            if (didLevelUp) {
+            const xpResult = systemService.dispatchEvent(player.id, new GainXpEvent(v.xp));
+
+            if (xpResult.some((r) => r.leveledUp)) {
+
                 messageLog.addMessage(
                     new Message("You have leveled up!", "yellow"),
                 );
@@ -697,11 +700,11 @@ function playerTick(action: IAction) {
                         null,
                         new Inventory(26),
                         null,
-                        new Level(),
                         new Equipment(),
                     );
                     entityService.addEntity(player);
                     componentService.addComponent(new FighterComponent(player.id, 100, 1, 2));
+                    componentService.addComponent(new LevelComponent(player.id));
 
                     gameState = GameState.PLAYER_TURN;
 

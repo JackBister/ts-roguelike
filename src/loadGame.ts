@@ -2,12 +2,8 @@
 import { Entity } from "./Entity";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
-import { inventoryFromObject } from "./Inventory";
-import { itemFromObject } from "./Item";
-import { Level } from "./Level";
 import { MessageLog } from "./MessageLog";
 import { ISavedGame } from "./saveGame";
-import { Stairs } from "./Stairs";
 
 interface ILoadedGame {
     currentMap: number;

@@ -2,9 +2,9 @@ import * as ROT from "rot-js";
 
 import { ComponentService } from "./components/Component.service";
 import { FighterComponent } from "./components/FighterComponent";
+import { LevelComponent } from "./components/LevelComponent";
 import { container } from "./config/container";
 import { Entity } from "./Entity";
-import { Level } from "./Level";
 
 const componentService: ComponentService = container.get<ComponentService>("ComponentService");
 
@@ -17,11 +17,12 @@ export function characterScreen(display: ROT.Display,
     const winX = Math.floor(screenWidth / 2 - width / 2);
     let winY = Math.floor(screenHeight / 2 - 27 / 2);
     display.drawText(winX, winY, "Character information");
-    if (entity.level) {
+    const entityLevel = componentService.getComponentByEntityIdAndType(entity.id, "LevelComponent") as LevelComponent;
+    if (entityLevel) {
         winY++;
-        display.drawText(winX, winY, `Level: ${entity.level.currentLevel}`);
+        display.drawText(winX, winY, `Level: ${entityLevel.currentLevel}`);
         winY++;
-        display.drawText(winX, winY, `Experience: ${entity.level.currentXp}/${Level.xpToLevel(entity.level)}`);
+        display.drawText(winX, winY, `Experience: ${entityLevel.currentXp}/${LevelComponent.xpToLevel(entityLevel)}`);
     }
 
     const entityFighter = componentService

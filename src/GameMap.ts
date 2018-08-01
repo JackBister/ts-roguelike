@@ -3,7 +3,6 @@ import { Equipment } from "./Equipment";
 import { Equippable } from "./Equippable";
 import { inventoryFromObject } from "./Inventory";
 import { itemFromObject } from "./Item";
-import { Level } from "./Level";
 import { Stairs } from "./Stairs";
 import { ITile } from "./Tile";
 

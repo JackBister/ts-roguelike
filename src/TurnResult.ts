@@ -9,6 +9,7 @@ export interface ITurnResult {
     equipped?: Entity;
     itemAdded?: Entity;
     itemDropped?: Entity;
+    leveledUp?: boolean;
     message?: Message;
     target?: Entity;
     targeting?: Entity;

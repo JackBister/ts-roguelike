@@ -20,6 +20,14 @@ export class ComponentService {
         return this.components.find((c) => c.id === id);
     }
 
+    public getComponentByEntityIdAndType(id: number, type: string): Component {
+        const res = this.components.filter((c) => c.ownerId === id && c.type === type);
+        if (res.length === 0) {
+            return null;
+        }
+        return res[0];
+    }
+
     public getComponentsForEntityId(id: number): Component[] {
         return this.components.filter((c) => c.ownerId === id);
     }
@@ -30,5 +38,9 @@ export class ComponentService {
 
     public getComponentsForEntityIdAndTypes(id: number, types: string[]): Component[] {
         return this.components.filter((c) => c.ownerId === id && types.includes(c.type));
+    }
+
+    public entityHasComponentOfType(entityId: number, type: string) {
+        return this.components.some((c) => c.ownerId === entityId && c.type === type);
     }
 }

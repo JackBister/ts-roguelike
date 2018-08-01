@@ -1,8 +1,12 @@
+import { ComponentService } from "./components/Component.service";
+import { FighterComponent } from "./components/FighterComponent";
+import { container } from "./config/container";
 import { Entity } from "./Entity";
-import { Fighter } from "./Fighter";
 import { IItem } from "./Item";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
+
+const componentService = container.get<ComponentService>("ComponentService");
 
 export class HealingPotion implements IItem {
     public owner: Entity;
@@ -13,7 +17,10 @@ export class HealingPotion implements IItem {
     public use(user: Entity, entities: Entity[]) {
         const results: ITurnResult[] = [];
 
-        if (!user.fighter) {
+        const userFighter = componentService
+            .getComponentByEntityIdAndType(user.id, "FighterComponent") as FighterComponent;
+
+        if (!userFighter) {
             results.push({
                 consumed: false,
                 message: new Message(`${user.name} tries to use a healing potion, but realizes it can't do so.`, "red"),
@@ -21,7 +28,9 @@ export class HealingPotion implements IItem {
             return results;
         }
 
-        if (user.fighter.currHp >= Fighter.getMaxHp(user.fighter)) {
+        // TODO: calculation
+        if (userFighter.currHp >= userFighter.baseMaxHp) {
+            // if (userFighter.currHp >= Fighter.getMaxHp(user.fighter)) {
             results.push({
                 consumed: false,
                 message: new Message("You are already at full health.", "yellow"),
@@ -29,7 +38,7 @@ export class HealingPotion implements IItem {
             return results;
         }
 
-        if (user.fighter.currHp <= 0) {
+        if (userFighter.currHp <= 0) {
             results.push({
                 consumed: false,
                 message: new Message("You are dead. The potion doesn't really help.", "yellow"),
@@ -40,9 +49,11 @@ export class HealingPotion implements IItem {
             consumed: true,
             message: new Message("Your wounds start to feel better!", "green"),
         });
-        user.fighter.currHp += this.healAmount;
-        if (user.fighter.currHp > Fighter.getMaxHp(user.fighter)) {
-            user.fighter.currHp = Fighter.getMaxHp(user.fighter);
+        userFighter.currHp += this.healAmount;
+        // TODO: calculation
+        if (userFighter.currHp > userFighter.baseMaxHp) {
+            // if (user.fighter.currHp > Fighter.getMaxHp(user.fighter)) {
+            userFighter.currHp = userFighter.baseMaxHp;
         }
 
         return results;

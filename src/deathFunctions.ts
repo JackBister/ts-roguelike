@@ -21,13 +21,13 @@ export function killMonster(monster: Entity) {
     monster.symbol = "%";
     monster.color = "darkred";
     monster.isBlocking = false;
-    monster.fighter = null;
     monster.name = `Remains of ${monster.name}`;
     monster.renderOrder = RenderOrder.CORPSE;
 
     // TODO: Subtypes?
     componentService.deleteComponentByOwnerIdAndType(monster.id, "BasicMonsterAiComponent");
     componentService.deleteComponentByOwnerIdAndType(monster.id, "ConfusedMonsterAiComponent");
+    componentService.deleteComponentByOwnerIdAndType(monster.id, "FighterComponent");
 
     return { message: new Message(message, "orange") };
 }

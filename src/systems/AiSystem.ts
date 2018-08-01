@@ -1,14 +1,18 @@
 import { inject, injectable } from "inversify";
 import { ComponentService } from "../components/Component.service";
 import { ConfusedMonsterAiComponent } from "../components/ConfusedMonsterAiComponent";
+import { FighterComponent } from "../components/FighterComponent";
 import { EntityService } from "../entities/Entity.service";
-import { Fighter } from "../Fighter";
+import { AttackEvent } from "../events/AttackEvent";
+import { REvent } from "../events/Event";
+import { TakeDamageEvent } from "../events/TakeDamageEvent";
 import { Message } from "../Message";
 import { randomInt } from "../randomInt";
 import { FovService } from "../services/Fov.service";
 import { MapService } from "../services/Map.service";
 import { ITurnResult } from "../TurnResult";
 import { ISystem } from "./System";
+import { SystemService } from "./System.service";
 
 @injectable()
 export class AiSystem implements ISystem {
@@ -23,10 +27,12 @@ export class AiSystem implements ISystem {
         @inject("EntityService") private entities: EntityService,
         @inject("ComponentService") private components: ComponentService,
         @inject("FovService") private fov: FovService,
-        @inject("MapService") private maps: MapService) { }
+        @inject("MapService") private maps: MapService,
+        @inject("SystemService") private systems: SystemService,
+    ) { }
 
-    public onEvent(entityId: number, event: string): ITurnResult[] {
-        if (event !== "think") {
+    public onEvent(entityId: number, event: REvent): ITurnResult[] {
+        if (event.type !== "ThinkEvent") {
             return [];
         }
 
@@ -68,10 +74,14 @@ export class AiSystem implements ISystem {
         });
 
         if (canSeeTarget) {
+            const targetFighter = this.components
+                .getComponentByEntityIdAndType(target.id, "FighterComponent") as FighterComponent;
             if (monster.distanceTo(target) >= 2) {
                 monster.moveAstar(target, this.maps.getCurrentMap(), this.entities.entities);
-            } else if (target.fighter && target.fighter.currHp > 0) {
-                results = results.concat(monster.fighter.attack(target));
+            } else if (targetFighter && targetFighter.currHp > 0) {
+                results = results.concat(
+                    this.systems.dispatchEvent(target.id, new AttackEvent(monster.id)),
+                );
             }
         }
 
@@ -92,11 +102,16 @@ export class AiSystem implements ISystem {
             }
 
             const hurtChance = randomInt(0, 100);
-            if (monster.fighter && hurtChance === 0) {
+            const monsterFighter = this.components
+                .getComponentByEntityIdAndType(monster.id, "FighterComponent") as FighterComponent;
+            if (monsterFighter && hurtChance === 0) {
                 results.push({
                     message: new Message(`The ${monster.name} hurt itself in its confusion!`, "red"),
                 });
-                results = results.concat(monster.fighter.takeDamage(Fighter.getPower(monster.fighter)));
+                results = results.concat(
+                    // TODO: Proper power calculation
+                    this.systems.dispatchEvent(monster.id, new TakeDamageEvent(monsterFighter.basePower)),
+                );
             }
 
             ai.numTurns--;

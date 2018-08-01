@@ -1,6 +1,5 @@
 
 import { Entity } from "./Entity";
-import { fighterFromObject } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
 import { inventoryFromObject } from "./Inventory";

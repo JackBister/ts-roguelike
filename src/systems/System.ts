@@ -1,6 +1,6 @@
+import { REvent } from "../events/Event";
 import { ITurnResult } from "../TurnResult";
 
 export interface ISystem {
-    // TODO: Event type
-    onEvent(entityId: number, event: string): ITurnResult[];
+    onEvent(entityId: number, event: REvent): ITurnResult[];
 }

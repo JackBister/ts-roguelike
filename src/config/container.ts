@@ -4,6 +4,7 @@ import { EntityService } from "../entities/Entity.service";
 import { FovService } from "../services/Fov.service";
 import { MapService } from "../services/Map.service";
 import { AiSystem } from "../systems/AiSystem";
+import { FighterSystem } from "../systems/FighterSystem";
 import { SystemService } from "../systems/System.service";
 
 export const container = new Container();
@@ -16,3 +17,4 @@ container.bind<FovService>("FovService").toConstantValue(new FovService(containe
 
 const systemService = container.get<SystemService>("SystemService");
 systemService.addSystem(container.resolve(AiSystem));
+systemService.addSystem(container.resolve(FighterSystem));

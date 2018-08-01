@@ -2,7 +2,6 @@ import * as ROT from "rot-js";
 
 import { Equipment } from "./Equipment";
 import { Equippable } from "./Equippable";
-import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
 import { IItem } from "./Item";
@@ -20,7 +19,6 @@ export class Entity {
         public isBlocking: boolean,
         public name: string,
         public renderOrder: RenderOrder,
-        public fighter: Fighter = null,
         public item: IItem = null,
         public inventory: Inventory = null,
         public stairs: Stairs = null,
@@ -30,10 +28,6 @@ export class Entity {
         public isActive: boolean = true,
         public mapId: number = null,
     ) {
-        if (this.fighter) {
-            this.fighter.owner = this;
-        }
-
         if (this.item) {
             this.item.owner = this;
         }

@@ -1,7 +1,6 @@
 import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { Equippable } from "./Equippable";
-import { fighterFromObject } from "./Fighter";
 import { inventoryFromObject } from "./Inventory";
 import { itemFromObject } from "./Item";
 import { Level } from "./Level";

@@ -22,7 +22,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Confusion Scroll",
                 RenderOrder.ITEM,
-                null,
                 new ConfusionScroll(obj.item.numTurns),
             );
         case "Fireball Scroll":
@@ -35,7 +34,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Fireball Scroll",
                 RenderOrder.ITEM,
-                null,
                 new FireballScroll(obj.item.damage, obj.item.radius),
             );
         case "Healing Potion":
@@ -48,7 +46,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Healing Potion",
                 RenderOrder.ITEM,
-                null,
                 new HealingPotion(obj.item.healAmount),
             );
         case "Lightning Scroll":
@@ -61,7 +58,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Lightning Scroll",
                 RenderOrder.ITEM,
-                null,
                 new LightningScroll(obj.item.damage, obj.item.maxRange),
             );
         case "Shield":
@@ -79,7 +75,6 @@ export function itemFromObject(obj: any): Entity {
                 null,
                 null,
                 null,
-                null,
                 new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
             );
         case "Sword":
@@ -92,7 +87,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Sword",
                 RenderOrder.ITEM,
-                null,
                 null,
                 null,
                 null,

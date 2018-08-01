@@ -1,4 +1,5 @@
 import { injectable } from "inversify";
+import { REvent } from "../events/Event";
 import { ITurnResult } from "../TurnResult";
 import { ISystem } from "./System";
 
@@ -10,7 +11,7 @@ export class SystemService {
         this.systems.push(s);
     }
 
-    public dispatchEvent(entityId: number, event: string): ITurnResult[] {
+    public dispatchEvent(entityId: number, event: REvent): ITurnResult[] {
         let results: ITurnResult[] = [];
         for (const s of this.systems) {
             results = results.concat(s.onEvent(entityId, event));

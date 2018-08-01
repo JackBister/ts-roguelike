@@ -1,11 +1,11 @@
 import { inject, injectable } from "inversify";
 import { BasicMonsterAiComponent } from "./components/BasicMonsterAiComponent";
 import { ComponentService } from "./components/Component.service";
+import { FighterComponent } from "./components/FighterComponent";
 import { ConfusionScroll } from "./ConfusionScroll";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { EquipmentSlot, Equippable } from "./Equippable";
-import { Fighter } from "./Fighter";
 import { FireballScroll } from "./FireballScroll";
 import { GameMap } from "./GameMap";
 import { HealingPotion } from "./HealingPotion";
@@ -90,7 +90,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                 RenderOrder.STAIRS,
                 null,
                 null,
-                null,
                 new Stairs(ret.dungeonLevel - 1),
             ));
         }
@@ -105,7 +104,6 @@ export class TutorialMapGenerator implements IMapGenerator {
             false,
             "Stairs",
             RenderOrder.STAIRS,
-            null,
             null,
             null,
             new Stairs(ret.dungeonLevel + 1),
@@ -205,7 +203,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Lightning Scroll",
                         RenderOrder.ITEM,
-                        null,
                         new LightningScroll(40, 5),
                     );
                 } else if (itemChoice === "fireballScroll") {
@@ -218,7 +215,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Fireball Scroll",
                         RenderOrder.ITEM,
-                        null,
                         new FireballScroll(25, 3),
                     );
                 } else if (itemChoice === "confusionScroll") {
@@ -231,7 +227,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Confusion Scroll",
                         RenderOrder.ITEM,
-                        null,
                         new ConfusionScroll(10),
                     );
                 } else if (itemChoice === "healingPotion") {
@@ -244,7 +239,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Healing Potion",
                         RenderOrder.ITEM,
-                        null,
                         new HealingPotion(40),
                     );
                 } else if (itemChoice === "shield") {
@@ -262,7 +256,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         null,
                         null,
                         null,
-                        null,
                         new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
                     );
                 } else if (itemChoice === "sword") {
@@ -275,7 +268,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Sword",
                         RenderOrder.ITEM,
-                        null,
                         null,
                         null,
                         null,
@@ -304,8 +296,8 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Orc",
                         RenderOrder.ACTOR,
-                        new Fighter(20, 0, 4, 35),
                     );
+                    this.componentService.addComponent(new FighterComponent(monster.id, 20, 0, 4, 35));
                 } else if (monsterChoice === "troll") {
                     monster = new Entity(
                         this.entityId++,
@@ -316,8 +308,8 @@ export class TutorialMapGenerator implements IMapGenerator {
                         true,
                         "Troll",
                         RenderOrder.ACTOR,
-                        new Fighter(30, 2, 8, 100),
                     );
+                    this.componentService.addComponent(new FighterComponent(monster.id, 30, 2, 8, 100));
                 }
                 this.entityService.addEntity(monster);
                 this.componentService.addComponent(new BasicMonsterAiComponent(monster.id));

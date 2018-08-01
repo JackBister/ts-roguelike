@@ -3,6 +3,7 @@ import { IAction } from "./Action";
 import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { ComponentService } from "./components/Component.service";
+import { FighterComponent } from "./components/FighterComponent";
 import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
@@ -11,8 +12,8 @@ import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
-import { Fighter } from "./Fighter";
-import { GameMap } from "./GameMap";
+import { AttackEvent } from "./events/AttackEvent";
+import { ThinkEvent } from "./events/ThinkEvent";
 import { GameState } from "./GameState";
 import { Inventory } from "./Inventory";
 import { Level } from "./Level";
@@ -239,13 +240,23 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
     }
     drawCon(mainDisplay, target);
     if (gameState === GameState.LEVEL_UP) {
+        const playerFighter = componentService
+            .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
         menu(mainDisplay,
             "Level up! Choose a stat to raise:",
+            // TODO: proper calculation
+            [
+                `HP +20 (current: ${playerFighter.baseMaxHp})`,
+                `Attack +1 (current: ${playerFighter.basePower})`,
+                `Defense +1 (current: ${playerFighter.baseDefense})`,
+            ],
+            /*
             [
                 `HP +20 (current: ${Fighter.getMaxHp(player.fighter)})`,
                 `Attack +1 (current: ${Fighter.getPower(player.fighter)})`,
                 `Defense +1 (current: ${Fighter.getDefense(player.fighter)})`,
             ],
+            */
             menuSelection,
             40,
             CONSTANTS.SCREEN_WIDTH,
@@ -350,13 +361,17 @@ function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: stri
     display.clear();
 
     if (target) {
+        const targetFighter =
+            componentService.getComponentByEntityIdAndType(target.id, "FighterComponent") as FighterComponent;
         drawBar(display,
             1,
             1,
             CONSTANTS.BAR_WIDTH,
             "HP",
-            target.fighter.currHp,
-            Fighter.getMaxHp(target.fighter),
+            targetFighter.currHp,
+            // TODO: proper calculation
+            targetFighter.baseMaxHp,
+            // Fighter.getMaxHp(target.fighter),
             "red",
             "darkred");
     }
@@ -412,7 +427,7 @@ function entityTick() {
 
     let results: ITurnResult[] = [];
     for (const v of entityService.entities) {
-        results = results.concat(systemService.dispatchEvent(v.id, "think"));
+        results = results.concat(systemService.dispatchEvent(v.id, new ThinkEvent()));
         /*
         if (v.ai) {
             results = results.concat(v.ai.takeTurn(player, fov, maps[currentMap], entities));
@@ -644,13 +659,15 @@ function playerTick(action: IAction) {
                 menuSelection = 2;
             }
         } else if (action.type === "enter") {
+            const playerFighter = componentService
+                .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
             if (menuSelection === 0) {
-                player.fighter.baseMaxHp += 20;
-                player.fighter.currHp += 20;
+                playerFighter.baseMaxHp += 20;
+                playerFighter.currHp += 20;
             } else if (menuSelection === 1) {
-                player.fighter.basePower += 1;
+                playerFighter.basePower += 1;
             } else if (menuSelection === 2) {
-                player.fighter.baseDefense += 1;
+                playerFighter.baseDefense += 1;
             }
             // HACK: Using previousState seems to get into some edge case where
             // if you level up from killing an enemy from the inventory you can't close the inventory.
@@ -677,7 +694,6 @@ function playerTick(action: IAction) {
                         true,
                         "Player",
                         RenderOrder.ACTOR,
-                        new Fighter(100, 1, 2),
                         null,
                         new Inventory(26),
                         null,
@@ -685,6 +701,7 @@ function playerTick(action: IAction) {
                         new Equipment(),
                     );
                     entityService.addEntity(player);
+                    componentService.addComponent(new FighterComponent(player.id, 100, 1, 2));
 
                     gameState = GameState.PLAYER_TURN;
 
@@ -734,7 +751,9 @@ function playerTick(action: IAction) {
             }
 
             if (targetEntity) {
-                results = results.concat(player.fighter.attack(targetEntity));
+                results = results.concat(
+                    systemService.dispatchEvent(targetEntity.id, new AttackEvent(player.id)),
+                );
             }
 
             if (!mapService.getCurrentMap().isBlocked(player.x + action.dir[0], player.y + action.dir[1])

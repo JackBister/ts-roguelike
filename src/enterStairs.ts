@@ -1,8 +1,8 @@
 import { ComponentService } from "./components/Component.service";
+import { FighterComponent } from "./components/FighterComponent";
 import { container } from "./config/container";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
-import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { CONSTANTS } from "./main";
 import { IMapGenerator } from "./MapGenerator";
@@ -44,10 +44,20 @@ export function enterStairs(
             player,
             stairs.floor));
 
-        player.fighter.currHp += Fighter.getMaxHp(player.fighter) / 2;
-        if (player.fighter.currHp > Fighter.getMaxHp(player.fighter)) {
-            player.fighter.currHp = Fighter.getMaxHp(player.fighter);
+        const playerFighter = componentService
+            .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
+
+        // TODO: proper hp calculation
+        playerFighter.currHp += playerFighter.baseMaxHp / 2;
+        if (playerFighter.currHp > playerFighter.baseMaxHp) {
+            playerFighter.currHp = playerFighter.baseMaxHp;
         }
+        /*
+            player.fighter.currHp += Fighter.getMaxHp(player.fighter) / 2;
+            if (player.fighter.currHp > Fighter.getMaxHp(player.fighter)) {
+                player.fighter.currHp = Fighter.getMaxHp(player.fighter);
+            }
+        */
         messageLog.addMessage(
             new Message("You rest for a moment, recovering your health.", "violet"),
         );

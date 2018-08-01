@@ -2,9 +2,12 @@ import * as ROT from "rot-js";
 import { IAction } from "./Action";
 import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
+import { ComponentService } from "./components/Component.service";
+import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
 import { enterStairs } from "./enterStairs";
+import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
@@ -19,6 +22,9 @@ import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
 import { ISavedGame, saveGame } from "./saveGame";
+import { FovService } from "./services/Fov.service";
+import { MapService } from "./services/Map.service";
+import { SystemService } from "./systems/System.service";
 import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
@@ -75,6 +81,7 @@ const USED_KEYS = [
 ];
 
 let con: ROT.Display;
+/*
 const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
     (x, y) => {
         if (x < 0 || x >= CONSTANTS.MAP_WIDTH
@@ -86,10 +93,11 @@ const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
 );
 
 let currentMap = 0;
-let entities: Entity[] = [];
+*/
+// let entities: Entity[] = [];
 let gameState: GameState = GameState.MAIN_MENU;
 let lastPointedEntityName: string = "";
-let maps: GameMap[] = [];
+// let maps: GameMap[] = [];
 let menuSelection = 0;
 let messageLog: MessageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
 let panel: ROT.Display;
@@ -98,6 +106,12 @@ let previousGameState: GameState = null;
 let targetTile: [number, number];
 let touchMoveRepeater: number;
 let isTouchDevice = false;
+
+const componentService = container.get<ComponentService>("ComponentService");
+const entityService = container.get<EntityService>("EntityService");
+const fovService = container.get<FovService>("FovService");
+const mapService = container.get<MapService>("MapService");
+const systemService = container.get<SystemService>("SystemService");
 
 function addResultsToMessageLog(results: ITurnResult[]) {
     for (const v of results) {
@@ -133,11 +147,11 @@ function addResultsToMessageLog(results: ITurnResult[]) {
         }
 
         if (v.itemAdded) {
-            entities.splice(entities.indexOf(v.itemAdded), 1);
+            v.itemAdded.isActive = false;
         }
 
         if (v.itemDropped) {
-            entities.push(v.itemDropped);
+            v.itemDropped.isActive = true;
         }
 
         if (v.targeting) {
@@ -208,7 +222,7 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
     if (isTouchDevice) {
-        drawTouchIcons(gameState, player, entities, playerTick);
+        drawTouchIcons(gameState, player, playerTick);
     }
     if (gameState === GameState.MAIN_MENU) {
         mainDisplay.clear();
@@ -274,7 +288,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; ++y) {
             const finalPosX = x - mapX0 + conX0;
             const finalPosY = y - mapY0 + conY0;
-            const tile = maps[currentMap].getTile(x, y);
+            const tile = mapService.getCurrentMap().getTile(x, y);
             if (tile.isSeen) {
                 if (tile.blocksSight) {
                     display.draw(finalPosX, finalPosY, "", null, COLORS.darkWall);
@@ -288,11 +302,11 @@ function drawCon(display: ROT.Display, target: Entity) {
     const visibleCoordinates: Array<[number, number]> = [];
 
     // Compute current FOV and draw
-    fov.compute(target.x, target.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
+    fovService.computeFov(target.x, target.y, CONSTANTS.PLAYER_FOV, (x, y) => {
         visibleCoordinates.push([x, y]);
         const finalPosX = x - mapX0 + conX0;
         const finalPosY = y - mapY0 + conY0;
-        const tile = maps[currentMap].getTile(x, y);
+        const tile = mapService.getCurrentMap().getTile(x, y);
         tile.isSeen = true;
         if (tile.blocksSight) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightWall);
@@ -302,8 +316,7 @@ function drawCon(display: ROT.Display, target: Entity) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightGround);
         }
         // TODO: Probably very slow with lots of entities + big rooms
-        const visEnts = entities
-            .filter((e) => e.x === x && e.y === y)
+        const visEnts = entityService.getEntitiesAtPos(x, y)
             .sort((e) => e.renderOrder);
         if (visEnts.length > 0) {
             const e = visEnts[visEnts.length - 1];
@@ -315,12 +328,12 @@ function drawCon(display: ROT.Display, target: Entity) {
         }
     });
 
-    entities
+    entityService.entities
         .filter((e) => e.stairs)
         .forEach((e) => {
             const finalPosX = e.x - mapX0 + conX0;
             const finalPosY = e.y - mapY0 + conY0;
-            const tile = maps[currentMap].getTile(e.x, e.y);
+            const tile = mapService.getCurrentMap().getTile(e.x, e.y);
             if (tile.isSeen) {
                 if (!visibleCoordinates.some((v) => v[0] === e.x && v[1] === e.y)) {
                     display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.darkGround);
@@ -353,7 +366,7 @@ function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: stri
         display.drawText(1, 0, pointedEntityName);
     }
 
-    display.drawText(1, 2, `Floor: ${maps[currentMap].dungeonLevel}`);
+    display.drawText(1, 2, `Floor: ${mapService.getCurrentMap().dungeonLevel}`);
 }
 
 function drawBar(display: ROT.Display, x: number, y: number, totalWidth: number, name: string, value: number,
@@ -398,10 +411,13 @@ function entityTick() {
     }
 
     let results: ITurnResult[] = [];
-    for (const v of entities) {
+    for (const v of entityService.entities) {
+        results = results.concat(systemService.dispatchEvent(v.id, "think"));
+        /*
         if (v.ai) {
             results = results.concat(v.ai.takeTurn(player, fov, maps[currentMap], entities));
         }
+        */
     }
 
     gameState = GameState.PLAYER_TURN;
@@ -415,7 +431,7 @@ export function main() {
     if (!ROT.isSupported()) {
         throw new Error("ERROR: ROT.js is not supported by this browser!");
     }
-    const container = document.getElementById("app");
+    const appContainer = document.getElementById("app");
 
     con = new ROT.Display({
         fontSize: 20,
@@ -423,7 +439,7 @@ export function main() {
         height: CONSTANTS.SCREEN_HEIGHT,
         width: CONSTANTS.SCREEN_WIDTH,
     });
-    container.appendChild(con.getContainer());
+    appContainer.appendChild(con.getContainer());
 
     panel = new ROT.Display({
         fontSize: 20,
@@ -431,7 +447,7 @@ export function main() {
         height: CONSTANTS.PANEL_HEIGHT,
         width: CONSTANTS.SCREEN_WIDTH,
     });
-    container.appendChild(panel.getContainer());
+    appContainer.appendChild(panel.getContainer());
 
     calculateCanvasSizes(con, panel);
 
@@ -533,17 +549,18 @@ function onMouseMove(evt: MouseEvent) {
     const conX0 = Math.floor(con.getOptions().width / 2);
     const conY0 = Math.floor(con.getOptions().height / 2);
 
-    const filteredEnts = entities
+    const filteredEnts = entityService.entities
         .filter((e) => {
             const finalPosX = e.x - player.x + conX0;
             const finalPosY = e.y - player.y + conY0;
-            return finalPosX === pos[0] && finalPosY === pos[1];
-        }).sort((e) => e.renderOrder);
+            return e.isActive && finalPosX === pos[0] && finalPosY === pos[1];
+        })
+        .sort((e) => e.renderOrder);
 
     let pointedEntName = "";
     if (filteredEnts.length > 0) {
         const pointedEnt = filteredEnts[filteredEnts.length - 1];
-        fov.compute(player.x, player.y, CONSTANTS.PLAYER_FOV, (x, y) => {
+        fovService.computeFov(player.x, player.y, CONSTANTS.PLAYER_FOV, (x, y) => {
             if (pointedEnt.x === x && pointedEnt.y === y) {
                 pointedEntName = pointedEnt.name;
             }
@@ -591,14 +608,14 @@ function onTouchStart(evt: TouchEvent) {
             }
                 , CONSTANTS.TOUCH_MOVE_REPEAT_DELAY,
             );
-        } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
+        } else if (entityService.entities.some((e) => e.isActive && e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {
             if (gameState === GameState.MAIN_MENU
                 || gameState === GameState.SHOW_INVENTORY
                 || gameState === GameState.TARGETING
                 || gameState === GameState.LEVEL_UP
-                || entities.some((e) => e.stairs && e.x === player.x && e.y === player.y)
+                || entityService.entities.some((e) => e.isActive && e.stairs && e.x === player.x && e.y === player.y)
             ) {
                 action = { type: "enter" };
             } else {
@@ -650,7 +667,7 @@ function playerTick(action: IAction) {
         } else if (action.type === "enter") {
             switch (MAIN_MENU_OPTIONS[menuSelection]) {
                 case "New Game": {
-                    entities = [];
+                    entityService.clearEntities();
                     player = new Entity(
                         0,
                         CONSTANTS.SCREEN_WIDTH,
@@ -662,23 +679,21 @@ function playerTick(action: IAction) {
                         RenderOrder.ACTOR,
                         new Fighter(100, 1, 2),
                         null,
-                        null,
                         new Inventory(26),
                         null,
                         new Level(),
                         new Equipment(),
                     );
-                    entities.push(player);
+                    entityService.addEntity(player);
 
                     gameState = GameState.PLAYER_TURN;
 
-                    maps.push(new TutorialMapGenerator().generate(
+                    mapService.addMap(new TutorialMapGenerator(entityService, componentService).generate(
                         {
                             height: CONSTANTS.MAP_HEIGHT,
                             width: CONSTANTS.MAP_WIDTH,
                         },
                         player,
-                        entities,
                         1));
 
                     messageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
@@ -689,9 +704,16 @@ function playerTick(action: IAction) {
                     if (savedGameString) {
                         const savedGame: ISavedGame = JSON.parse(savedGameString);
                         const loadedGame = loadGame(savedGame);
-                        currentMap = loadedGame.currentMap;
-                        entities = loadedGame.entities;
-                        maps = loadedGame.gameMaps;
+                        for (const e of loadedGame.entities) {
+                            entityService.addEntity(e);
+                        }
+                        for (const m of loadedGame.gameMaps) {
+                            const oldId = m.id;
+                            mapService.addMap(m);
+                            if (loadedGame.currentMap === oldId) {
+                                mapService.setCurrentMap(m.id);
+                            }
+                        }
                         gameState = loadedGame.gameState;
                         messageLog = loadedGame.messageLog;
                         player = loadedGame.player;
@@ -704,8 +726,8 @@ function playerTick(action: IAction) {
         if (action.type === "move") {
             let targetEntity: Entity = null;
             {
-                const targetEntities = entities
-                    .filter((e) => e.x === player.x + action.dir[0] && e.y === player.y + action.dir[1]);
+                const targetEntities = entityService
+                    .getEntitiesAtPos(player.x + action.dir[0], player.y + action.dir[1]);
                 if (targetEntities.length > 0) {
                     targetEntity = targetEntities[0];
                 }
@@ -715,7 +737,7 @@ function playerTick(action: IAction) {
                 results = results.concat(player.fighter.attack(targetEntity));
             }
 
-            if (!maps[currentMap].isBlocked(player.x + action.dir[0], player.y + action.dir[1])
+            if (!mapService.getCurrentMap().isBlocked(player.x + action.dir[0], player.y + action.dir[1])
                 && (!targetEntity || !targetEntity.isBlocking)) {
                 player.x += action.dir[0];
                 player.y += action.dir[1];
@@ -723,9 +745,9 @@ function playerTick(action: IAction) {
 
             gameState = GameState.ENEMY_TURN;
         } else if (action.type === "pickup") {
-            const pickedUpEntity = entities.filter((e) => (e.item || e.equippable)
-                && e.x === player.x
-                && e.y === player.y);
+            const pickedUpEntity = entityService
+                .getEntitiesAtPos(player.x, player.y)
+                .filter((e) => (e.item || e.equippable));
             if (pickedUpEntity.length > 0) {
                 results = results.concat(player.inventory.addItem(pickedUpEntity[0]));
             } else {
@@ -740,22 +762,29 @@ function playerTick(action: IAction) {
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         } else if (action.type === "exit") {
-            saveGame(player, entities, maps, currentMap, messageLog, gameState);
+            saveGame(player,
+                entityService.entities,
+                mapService.maps,
+                mapService.getCurrentMapId(),
+                messageLog,
+                gameState);
             menuSelection = 0;
             gameState = GameState.MAIN_MENU;
-            entities = [];
-            maps = [];
+            entityService.clearEntities();
+            mapService.clearMaps();
         } else if (action.type === "enter") {
-            const stairsUnderPlayer = entities.filter((e) => e.stairs && e.x === player.x && e.y === player.y);
+            const stairsUnderPlayer = entityService.getEntitiesAtPos(player.x, player.y).filter((e) => e.stairs);
             if (stairsUnderPlayer.length > 0) {
-                [entities, currentMap] = enterStairs(
+                let newMapId = mapService.getCurrentMapId();
+                newMapId = enterStairs(
                     stairsUnderPlayer[0].stairs,
                     player,
-                    maps,
+                    mapService.maps,
                     messageLog,
-                    new TutorialMapGenerator(),
-                    currentMap + 1,
+                    new TutorialMapGenerator(entityService, componentService),
+                    mapService.getCurrentMapId() + 1,
                 );
+                mapService.setCurrentMap(newMapId);
             }
         } else if (action.type === "wait") {
             messageLog.addMessage(
@@ -784,25 +813,31 @@ function playerTick(action: IAction) {
                 menuSelection = player.inventory.items.length - 1;
             }
         } else if (action.type === "enter") {
-            results = results.concat(player.inventory.useItem(menuSelection, entities, fov));
+            results = results.concat(player.inventory.useItem(menuSelection, entityService.entities, fovService));
             if (menuSelection >= player.inventory.items.length) {
                 menuSelection = player.inventory.items.length - 1;
             }
         } else if (action.type === "drop") {
-            results = results.concat(player.inventory.dropItem(menuSelection, entities));
+            results = results.concat(player.inventory.dropItem(menuSelection, entityService.entities));
             if (menuSelection >= player.inventory.items.length) {
                 menuSelection = player.inventory.items.length - 1;
             }
         }
     } else if (gameState === GameState.TARGETING) {
         if (action.type === "move") {
-            if (!maps[currentMap].getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight) {
+            if (!mapService.getCurrentMap()
+                .getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight
+            ) {
                 targetTile[0] += action.dir[0];
                 targetTile[1] += action.dir[1];
             }
         } else if (action.type === "enter") {
             results = results.concat(
-                player.inventory.useItem(menuSelection, entities, fov, targetTile[0], targetTile[1]),
+                player.inventory.useItem(menuSelection,
+                    entityService.entities,
+                    fovService,
+                    targetTile[0],
+                    targetTile[1]),
             );
             if (menuSelection >= player.inventory.items.length) {
                 menuSelection = player.inventory.items.length - 1;

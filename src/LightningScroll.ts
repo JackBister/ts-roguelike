@@ -4,6 +4,7 @@ import { Entity } from "./Entity";
 import { IItem } from "./Item";
 import { CONSTANTS } from "./main";
 import { Message } from "./Message";
+import { FovService } from "./services/Fov.service";
 import { ITurnResult } from "./TurnResult";
 
 export class LightningScroll implements IItem {
@@ -17,11 +18,11 @@ export class LightningScroll implements IItem {
         }
     }
 
-    public use(user: Entity, entities: Entity[], fov: ROT.FOV) {
+    public use(user: Entity, entities: Entity[], fovService: FovService) {
         let results: ITurnResult[] = [];
 
         let targets: Entity[] = [];
-        fov.compute(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
+        fovService.computeFov(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y) => {
             targets = targets.concat(entities.filter((e) => e.fighter && e.x === x && e.y === y));
         });
 

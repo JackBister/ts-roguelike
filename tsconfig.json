@@ -1,5 +1,13 @@
 {
     "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "lib": [
+            "dom",
+            "es6",
+            "es2016.array.include",
+            "es2017",
+        ],
         "module": "commonjs",
         "sourceMap": true,
         "target": "es2017"

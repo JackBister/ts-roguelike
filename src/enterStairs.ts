@@ -1,3 +1,6 @@
+import { ComponentService } from "./components/Component.service";
+import { container } from "./config/container";
+import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
@@ -8,35 +11,37 @@ import { MessageLog } from "./MessageLog";
 import { Stairs } from "./Stairs";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
+const componentService = container.get<ComponentService>("ComponentService");
+const entityService = container.get<EntityService>("EntityService");
+
 export function enterStairs(
     stairs: Stairs,
     player: Entity,
     maps: GameMap[],
     messageLog: MessageLog,
-    generator: IMapGenerator = new TutorialMapGenerator(),
+    generator: IMapGenerator = new TutorialMapGenerator(entityService, componentService),
     currentFloor: number,
-): [Entity[], number] {
+): number {
     if (maps.some((m) => m.dungeonLevel === stairs.floor)) {
         const floor = maps.filter((m) => m.dungeonLevel === stairs.floor)[0];
         // TODO: Go to existing floor
+        /*
         const entities = floor.entities;
 
         const downStairs = entities.filter((e) => e.stairs && e.stairs.floor === currentFloor);
 
         player.x = downStairs[0].x;
         player.y = downStairs[0].y;
+        */
 
-        return [entities, stairs.floor - 1];
+        return stairs.floor - 1;
     } else {
-        const entities = [player];
-
         maps.push(generator.generate(
             {
                 height: CONSTANTS.MAP_HEIGHT,
                 width: CONSTANTS.MAP_WIDTH,
             },
             player,
-            entities,
             stairs.floor));
 
         player.fighter.currHp += Fighter.getMaxHp(player.fighter) / 2;
@@ -47,6 +52,6 @@ export function enterStairs(
             new Message("You rest for a moment, recovering your health.", "violet"),
         );
 
-        return [entities, stairs.floor - 1];
+        return stairs.floor - 1;
     }
 }

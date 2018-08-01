@@ -4,6 +4,7 @@ import { Entity } from "./Entity";
 import { IItem } from "./Item";
 import { CONSTANTS } from "./main";
 import { Message } from "./Message";
+import { FovService } from "./services/Fov.service";
 import { ITurnResult } from "./TurnResult";
 
 export class FireballScroll implements IItem {
@@ -13,11 +14,11 @@ export class FireballScroll implements IItem {
 
     constructor(public damage: number, public radius: number) {}
 
-    public use(user: Entity, entities: Entity[], fov: ROT.FOV, targetX?: number, targetY?: number) {
+    public use(user: Entity, entities: Entity[], fovService: FovService, targetX?: number, targetY?: number) {
         let results: ITurnResult[] = [];
 
         let inFov = false;
-        fov.compute(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y, r, vis) => {
+        fovService.computeFov(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y) => {
             if (x === targetX && y === targetY) {
                 inFov = true;
             }

@@ -1,4 +1,3 @@
-import { aiFromObject } from "./Ai";
 import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { Equippable } from "./Equippable";
@@ -12,6 +11,8 @@ import { ITile } from "./Tile";
 export class GameMap {
     public static fromOtherMap(mapToCopy: GameMap): GameMap {
         const newEntities = [];
+        // TODO:
+        /*
         for (const e of mapToCopy.entities) {
             const ne = new Entity(
                 e.id,
@@ -72,8 +73,9 @@ export class GameMap {
             }
             newEntities.push(ne);
         }
+        */
 
-        const ret = new GameMap(mapToCopy.height, mapToCopy.width, newEntities, mapToCopy.dungeonLevel);
+        const ret = new GameMap(mapToCopy.height, mapToCopy.width, mapToCopy.dungeonLevel);
 
         for (let x = 0; x < ret.width; ++x) {
             for (let y = 0; y < ret.height; ++y) {
@@ -84,12 +86,12 @@ export class GameMap {
         return ret;
     }
 
+    public id: number;
     private tiles: ITile[][] = [];
 
     constructor(
         public readonly height: number,
         public readonly width: number,
-        public readonly entities: Entity[],
         public readonly dungeonLevel = 1,
     ) {
         for (let x = 0; x < this.width; ++x) {

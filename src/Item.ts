@@ -7,6 +7,7 @@ import { FireballScroll } from "./FireballScroll";
 import { HealingPotion } from "./HealingPotion";
 import { LightningScroll } from "./LightningScroll";
 import { RenderOrder } from "./RenderOrder";
+import { FovService } from "./services/Fov.service";
 import { ITurnResult } from "./TurnResult";
 
 export function itemFromObject(obj: any): Entity {
@@ -22,7 +23,6 @@ export function itemFromObject(obj: any): Entity {
                 "Confusion Scroll",
                 RenderOrder.ITEM,
                 null,
-                null,
                 new ConfusionScroll(obj.item.numTurns),
             );
         case "Fireball Scroll":
@@ -35,7 +35,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Fireball Scroll",
                 RenderOrder.ITEM,
-                null,
                 null,
                 new FireballScroll(obj.item.damage, obj.item.radius),
             );
@@ -50,7 +49,6 @@ export function itemFromObject(obj: any): Entity {
                 "Healing Potion",
                 RenderOrder.ITEM,
                 null,
-                null,
                 new HealingPotion(obj.item.healAmount),
             );
         case "Lightning Scroll":
@@ -64,7 +62,6 @@ export function itemFromObject(obj: any): Entity {
                 "Lightning Scroll",
                 RenderOrder.ITEM,
                 null,
-                null,
                 new LightningScroll(obj.item.damage, obj.item.maxRange),
             );
         case "Shield":
@@ -77,7 +74,6 @@ export function itemFromObject(obj: any): Entity {
                 false,
                 "Shield",
                 RenderOrder.ITEM,
-                null,
                 null,
                 null,
                 null,
@@ -102,7 +98,6 @@ export function itemFromObject(obj: any): Entity {
                 null,
                 null,
                 null,
-                null,
                 new Equippable(EquipmentSlot.MAIN_HAND, 3, 0, 0),
             );
     }
@@ -114,5 +109,10 @@ export interface IItem {
     readonly name: string;
     readonly requiresTarget?: boolean;
 
-    use: (user: Entity, entities: Entity[], fov: ROT.FOV, targetX?: number, targetY?: number) => ITurnResult[];
+    use: (user: Entity,
+          entities: Entity[],
+          fovService: FovService,
+          targetX?: number,
+          targetY?: number,
+    ) => ITurnResult[];
 }

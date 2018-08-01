@@ -1,7 +1,11 @@
+import { ComponentService } from "./components/Component.service";
+import { container } from "./config/container";
 import { Entity } from "./Entity";
 import { GameState } from "./GameState";
 import { Message } from "./Message";
 import { RenderOrder } from "./RenderOrder";
+
+const componentService = container.get<ComponentService>("ComponentService");
 
 export function killPlayer(player: Entity) {
     player.symbol = "%";
@@ -18,9 +22,12 @@ export function killMonster(monster: Entity) {
     monster.color = "darkred";
     monster.isBlocking = false;
     monster.fighter = null;
-    monster.ai = null;
     monster.name = `Remains of ${monster.name}`;
     monster.renderOrder = RenderOrder.CORPSE;
+
+    // TODO: Subtypes?
+    componentService.deleteComponentByOwnerIdAndType(monster.id, "BasicMonsterAiComponent");
+    componentService.deleteComponentByOwnerIdAndType(monster.id, "ConfusedMonsterAiComponent");
 
     return { message: new Message(message, "orange") };
 }

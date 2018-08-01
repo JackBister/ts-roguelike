@@ -5,6 +5,7 @@ import { Equipment } from "./Equipment";
 import { IItem, itemFromObject } from "./Item";
 import { Message } from "./Message";
 import { RenderOrder } from "./RenderOrder";
+import { FovService } from "./services/Fov.service";
 import { ITurnResult } from "./TurnResult";
 
 export function inventoryFromObject(obj: any): Inventory {
@@ -75,7 +76,7 @@ export class Inventory {
         return results;
     }
 
-    public useItem(index: number, entities: Entity[], fov: ROT.FOV, targetX?: number, targetY?: number) {
+    public useItem(index: number, entities: Entity[], fovService: FovService, targetX?: number, targetY?: number) {
         let results: ITurnResult[] = [];
 
         if (index >= this.items.length || index < 0) {
@@ -102,7 +103,7 @@ export class Inventory {
             return results;
         }
 
-        const itemUseResults = this.items[index].item.use(this.owner, entities, fov, targetX, targetY);
+        const itemUseResults = this.items[index].item.use(this.owner, entities, fovService, targetX, targetY);
         if (itemUseResults.some((r) => r.consumed)) {
             this.items.splice(index, 1);
         }

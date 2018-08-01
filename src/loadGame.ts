@@ -1,5 +1,4 @@
 
-import { aiFromObject } from "./Ai";
 import { Entity } from "./Entity";
 import { fighterFromObject } from "./Fighter";
 import { GameMap } from "./GameMap";
@@ -34,7 +33,7 @@ export function loadGame(savedGame: ISavedGame) {
     }
     ret.gameState = savedGame.gameState;
     ret.messageLog = MessageLog.fromOtherMessageLog(savedGame.messageLog);
-    ret.entities = ret.gameMaps[ret.currentMap].entities;
+    ret.entities = savedGame.entities;
     ret.player = ret.entities[savedGame.playerIndex];
     return ret;
 }

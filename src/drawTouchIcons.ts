@@ -1,12 +1,15 @@
 
 import { IAction } from "./Action";
+import { container } from "./config/container";
+import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { GameState } from "./GameState";
+
+const entityService = container.get<EntityService>("EntityService");
 
 export function drawTouchIcons(
     gameState: GameState,
     player: Entity,
-    entities: Entity[],
     playerTick: (action: IAction) => void,
 ) {
     const touchIcons = document.getElementById("touch-icons");
@@ -28,7 +31,7 @@ export function drawTouchIcons(
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
-        && entities.some((e) => e.item && e.x === player.x && e.y === player.y)
+        && entityService.entities.some((e) => e.item && e.x === player.x && e.y === player.y)
     ) {
         const pickupIcon = document.createElement("span");
         pickupIcon.setAttribute("class", "oi");
@@ -44,7 +47,7 @@ export function drawTouchIcons(
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
-        && entities.some((e) => e.stairs && e.x === player.x && e.y === player.y)
+        && entityService.entities.some((e) => e.stairs && e.x === player.x && e.y === player.y)
     ) {
         const stairsIcon = document.createElement("span");
         stairsIcon.setAttribute("class", "oi");

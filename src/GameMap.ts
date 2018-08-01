@@ -1,5 +1,7 @@
 import { aiFromObject } from "./Ai";
 import { Entity } from "./Entity";
+import { Equipment } from "./Equipment";
+import { Equippable } from "./Equippable";
 import { fighterFromObject } from "./Fighter";
 import { inventoryFromObject } from "./Inventory";
 import { itemFromObject } from "./Item";
@@ -12,6 +14,7 @@ export class GameMap {
         const newEntities = [];
         for (const e of mapToCopy.entities) {
             const ne = new Entity(
+                e.id,
                 e.x,
                 e.y,
                 e.color,
@@ -33,7 +36,7 @@ export class GameMap {
                 ne.inventory.owner = ne;
             }
             if (e.item) {
-                ne.item = itemFromObject(e.item);
+                ne.item = itemFromObject(e.item).item;
                 ne.item.owner = ne;
             }
             if (e.stairs) {
@@ -46,6 +49,26 @@ export class GameMap {
                     e.level.levelUpBase,
                     e.level.levelUpFactor);
                 ne.level.owner = ne;
+            }
+            if (e.equipment) {
+                ne.equipment = new Equipment();
+                for (let i = 0; i < ne.equipment.equipped.length; ++i) {
+                    if (e.equipment.equipped[i]) {
+                        const eq = e.equipment.equipped[i];
+                        const neq = ne.inventory.items.filter((item) => item.id === (eq as any)._ownerId)[0].equippable;
+                        ne.equipment.equipped[i] = neq;
+                    }
+                }
+                ne.equipment.owner = ne;
+            }
+            if (e.equippable) {
+                ne.equippable = new Equippable(
+                    e.equippable.slot,
+                    e.equippable.powerBonus,
+                    e.equippable.defenseBonus,
+                    e.equippable.maxHpBonus,
+                );
+                ne.equippable.owner = ne;
             }
             newEntities.push(ne);
         }

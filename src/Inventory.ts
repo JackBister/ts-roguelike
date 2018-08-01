@@ -1,6 +1,7 @@
 import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
+import { Equipment } from "./Equipment";
 import { IItem, itemFromObject } from "./Item";
 import { Message } from "./Message";
 import { RenderOrder } from "./RenderOrder";
@@ -20,20 +21,20 @@ export function inventoryFromObject(obj: any): Inventory {
 
 export class Inventory {
     public owner: Entity;
-    public items: IItem[];
+    public items: Entity[];
 
     constructor(private capacity: number) {
         this.items = [];
     }
 
-    public addItem(item: IItem) {
+    public addItem(item: Entity) {
         const results: ITurnResult[] = [];
 
         if (this.items.length >= this.capacity) {
             results.push({ message: new Message("Your inventory is full.", "yellow") });
         } else {
             results.push({
-                itemAdded: item.owner,
+                itemAdded: item,
                 message: new Message(`You pick up the ${item.name}!`, "blue"),
             });
             this.items.push(item);
@@ -55,25 +56,19 @@ export class Inventory {
         }
 
         const item = this.items[index];
-        if (!item.owner) {
-            item.owner = new Entity(
-                this.owner.x,
-                this.owner.y,
-                "violet",
-                "?",
-                false,
-                item.name,
-                RenderOrder.ITEM,
-                null,
-                null,
-                item,
-            );
+
+        if (this.owner.equipment
+            && item.equippable
+            && this.owner.equipment.equipped.includes(item.equippable)
+        ) {
+            Equipment.toggleEquip(this.owner.equipment, item.equippable);
         }
-        item.owner.x = this.owner.x;
-        item.owner.y = this.owner.y;
+
+        item.x = this.owner.x;
+        item.y = this.owner.y;
         this.items.splice(index, 1);
         results.push({
-            itemDropped: item.owner,
+            itemDropped: item,
             message: new Message(`You drop the ${item.name}.`, "yellow"),
         });
 
@@ -93,12 +88,21 @@ export class Inventory {
             return results;
         }
 
-        if (this.items[index].requiresTarget && targetX === undefined && targetY === undefined) {
-            results.push({ targeting: this.items[index].owner });
+        if (!this.items[index].item) {
+           if (this.items[index].equippable) {
+               results.push({ equip: this.items[index] });
+           } else {
+               results.push({ message: new Message(`The ${this.items[index].name} cannot be used.`, "yellow") });
+           }
+           return results;
+        }
+
+        if (this.items[index].item.requiresTarget && targetX === undefined && targetY === undefined) {
+            results.push({ targeting: this.items[index] });
             return results;
         }
 
-        const itemUseResults = this.items[index].use(this.owner, entities, fov, targetX, targetY);
+        const itemUseResults = this.items[index].item.use(this.owner, entities, fov, targetX, targetY);
         if (itemUseResults.some((r) => r.consumed)) {
             this.items.splice(index, 1);
         }
@@ -110,6 +114,7 @@ export class Inventory {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "Inventory";
         return ret;

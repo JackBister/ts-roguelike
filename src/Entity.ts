@@ -1,6 +1,8 @@
 import * as ROT from "rot-js";
 
 import { IAi } from "./Ai";
+import { Equipment } from "./Equipment";
+import { Equippable } from "./Equippable";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { Inventory } from "./Inventory";
@@ -11,6 +13,7 @@ import { Stairs } from "./Stairs";
 
 export class Entity {
     constructor(
+        public id: number,
         public x: number,
         public y: number,
         public color: string,
@@ -24,6 +27,8 @@ export class Entity {
         public inventory: Inventory = null,
         public stairs: Stairs = null,
         public level: Level = null,
+        public equipment: Equipment = null,
+        public equippable: Equippable = null,
     ) {
         if (this.fighter) {
             this.fighter.owner = this;
@@ -47,6 +52,14 @@ export class Entity {
 
         if (this.level) {
             this.level.owner = this;
+        }
+
+        if (this.equipment) {
+            this.equipment.owner = this;
+        }
+
+        if (this.equippable) {
+            this.equippable.owner = this;
         }
     }
 

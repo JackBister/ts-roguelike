@@ -6,6 +6,8 @@ import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
 import { enterStairs } from "./enterStairs";
 import { Entity } from "./Entity";
+import { Equipment } from "./Equipment";
+import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
 import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
@@ -117,6 +119,19 @@ function addResultsToMessageLog(results: ITurnResult[]) {
             messageLog.addMessage(deathMessage);
         }
 
+        if (v.equip) {
+            const equipResults = Equipment.toggleEquip(player.equipment, v.equip.equippable);
+
+            for (const res of equipResults) {
+                if (res.dequipped) {
+                    messageLog.addMessage(new Message(`You unequip the ${res.dequipped.name}.`, "white"));
+                }
+                if (res.equipped) {
+                    messageLog.addMessage(new Message(`You equip the ${res.equipped.name}.`, "white"));
+                }
+            }
+        }
+
         if (v.itemAdded) {
             entities.splice(entities.indexOf(v.itemAdded), 1);
         }
@@ -213,9 +228,9 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
         menu(mainDisplay,
             "Level up! Choose a stat to raise:",
             [
-                `HP +20 (current: ${player.fighter.maxHp})`,
-                `Attack +1 (current: ${player.fighter.power})`,
-                `Defense +1 (current: ${player.fighter.defense})`,
+                `HP +20 (current: ${Fighter.getMaxHp(player.fighter)})`,
+                `Attack +1 (current: ${Fighter.getPower(player.fighter)})`,
+                `Defense +1 (current: ${Fighter.getDefense(player.fighter)})`,
             ],
             menuSelection,
             40,
@@ -230,7 +245,13 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
     } else if (gameState === GameState.SHOW_INVENTORY) {
         menu(mainDisplay,
             "Inventory",
-            player.inventory.items.map((i) => i.name),
+            player.inventory.items
+                .map((i) => {
+                    if (i.equippable && player.equipment.equipped.includes(i.equippable)) {
+                        return i.name + ` (on ${EQUIPMENTSLOTSTRINGS[i.equippable.slot]})`;
+                    }
+                    return i.name;
+                }),
             menuSelection,
             50,
             CONSTANTS.SCREEN_WIDTH,
@@ -322,7 +343,7 @@ function drawPanel(display: ROT.Display, target: Entity, pointedEntityName: stri
             CONSTANTS.BAR_WIDTH,
             "HP",
             target.fighter.currHp,
-            target.fighter.maxHp,
+            Fighter.getMaxHp(target.fighter),
             "red",
             "darkred");
     }
@@ -568,8 +589,8 @@ function onTouchStart(evt: TouchEvent) {
             touchMoveRepeater = window.setInterval(() => {
                 playerTick(action);
             }
-            , CONSTANTS.TOUCH_MOVE_REPEAT_DELAY,
-        );
+                , CONSTANTS.TOUCH_MOVE_REPEAT_DELAY,
+            );
         } else if (entities.some((e) => e.item && e.x === player.x && e.y === player.y)) {
             action = { type: "pickup" };
         } else {
@@ -607,12 +628,12 @@ function playerTick(action: IAction) {
             }
         } else if (action.type === "enter") {
             if (menuSelection === 0) {
-                player.fighter.maxHp += 20;
+                player.fighter.baseMaxHp += 20;
                 player.fighter.currHp += 20;
             } else if (menuSelection === 1) {
-                player.fighter.power += 1;
+                player.fighter.basePower += 1;
             } else if (menuSelection === 2) {
-                player.fighter.defense += 1;
+                player.fighter.baseDefense += 1;
             }
             // HACK: Using previousState seems to get into some edge case where
             // if you level up from killing an enemy from the inventory you can't close the inventory.
@@ -631,6 +652,7 @@ function playerTick(action: IAction) {
                 case "New Game": {
                     entities = [];
                     player = new Entity(
+                        0,
                         CONSTANTS.SCREEN_WIDTH,
                         CONSTANTS.SCREEN_HEIGHT,
                         "white",
@@ -638,12 +660,13 @@ function playerTick(action: IAction) {
                         true,
                         "Player",
                         RenderOrder.ACTOR,
-                        new Fighter(100, 1, 4),
+                        new Fighter(100, 1, 2),
                         null,
                         null,
                         new Inventory(26),
                         null,
                         new Level(),
+                        new Equipment(),
                     );
                     entities.push(player);
 
@@ -700,9 +723,11 @@ function playerTick(action: IAction) {
 
             gameState = GameState.ENEMY_TURN;
         } else if (action.type === "pickup") {
-            const pickedUpEntity = entities.filter((e) => e.item && e.x === player.x && e.y === player.y);
+            const pickedUpEntity = entities.filter((e) => (e.item || e.equippable)
+                && e.x === player.x
+                && e.y === player.y);
             if (pickedUpEntity.length > 0) {
-                results = results.concat(player.inventory.addItem(pickedUpEntity[0].item));
+                results = results.concat(player.inventory.addItem(pickedUpEntity[0]));
             } else {
                 messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
             }

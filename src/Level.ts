@@ -26,6 +26,7 @@ export class Level {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "Level";
         return ret;

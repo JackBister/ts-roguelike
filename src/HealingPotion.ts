@@ -1,4 +1,5 @@
 import { Entity } from "./Entity";
+import { Fighter } from "./Fighter";
 import { IItem } from "./Item";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
@@ -25,7 +26,7 @@ export class HealingPotion implements IItem {
             return results;
         }
 
-        if (user.fighter.currHp >= user.fighter.maxHp) {
+        if (user.fighter.currHp >= Fighter.getMaxHp(user.fighter)) {
             results.push({
                 consumed: false,
                 message: new Message("You are already at full health.", "yellow"),
@@ -45,8 +46,8 @@ export class HealingPotion implements IItem {
             message: new Message("Your wounds start to feel better!", "green"),
         });
         user.fighter.currHp += this.healAmount;
-        if (user.fighter.currHp > user.fighter.maxHp) {
-            user.fighter.currHp = user.fighter.maxHp;
+        if (user.fighter.currHp > Fighter.getMaxHp(user.fighter)) {
+            user.fighter.currHp = Fighter.getMaxHp(user.fighter);
         }
 
         return results;
@@ -58,6 +59,7 @@ export class HealingPotion implements IItem {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "HealingPotion";
         return ret;

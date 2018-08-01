@@ -54,6 +54,7 @@ export class LightningScroll implements IItem {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "LightningScroll";
         return ret;

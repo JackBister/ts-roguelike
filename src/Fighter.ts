@@ -1,11 +1,12 @@
 import { Entity } from "./Entity";
+import { Equipment } from "./Equipment";
 import { Message } from "./Message";
 import { ITurnResult } from "./TurnResult";
 
 export function fighterFromObject(obj: any): Fighter {
     switch (obj._type) {
         case "Fighter":
-            const ret = new Fighter(obj.maxHp, obj.defense, obj.power);
+            const ret = new Fighter(obj.baseMaxHp, obj.baseDefense, obj.basePower);
             ret.currHp = obj.currHp;
             return ret;
     }
@@ -13,14 +14,38 @@ export function fighterFromObject(obj: any): Fighter {
 }
 
 export class Fighter {
+    public static getDefense(f: Fighter) {
+        let ret = f.baseDefense;
+        if (f.owner && f.owner.equipment) {
+            ret += Equipment.getDefenseBonus(f.owner.equipment);
+        }
+        return ret;
+    }
+
+    public static getMaxHp(f: Fighter) {
+        let ret = f.baseMaxHp;
+        if (f.owner && f.owner.equipment) {
+            ret += Equipment.getMaxHpBonus(f.owner.equipment);
+        }
+        return ret;
+    }
+
+    public static getPower(f: Fighter) {
+        let ret = f.basePower;
+        if (f.owner && f.owner.equipment) {
+            ret += Equipment.getPowerBonus(f.owner.equipment);
+        }
+        return ret;
+    }
+
     public owner: Entity;
 
     public currHp: number;
-    public maxHp: number;
+    public baseMaxHp: number;
 
-    constructor(hp: number, public defense: number, public power: number, public xp: number = 0) {
+    constructor(hp: number, public baseDefense: number, public basePower: number, public xp: number = 0) {
         this.currHp = hp;
-        this.maxHp = hp;
+        this.baseMaxHp = hp;
     }
 
     public attack(target: Entity) {
@@ -29,7 +54,7 @@ export class Fighter {
         if (!target || !target.fighter) {
             return results;
         }
-        const damage = this.power - target.fighter.defense;
+        const damage = Fighter.getPower(this) - Fighter.getDefense(target.fighter);
 
         if (damage > 0) {
             results.push({
@@ -68,6 +93,7 @@ export class Fighter {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "Fighter";
         return ret;

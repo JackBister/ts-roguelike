@@ -2,6 +2,7 @@ import * as ROT from "rot-js";
 
 import { IAi } from "./Ai";
 import { Entity } from "./Entity";
+import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { Message } from "./Message";
 import { randomInt } from "./randomInt";
@@ -38,7 +39,7 @@ export class ConfusedMonsterAi implements IAi {
                 results.push({
                     message: new Message(`The ${this.owner.name} hurt itself in its confusion!`, "red"),
                 });
-                results = results.concat(this.owner.fighter.takeDamage(this.owner.fighter.power));
+                results = results.concat(this.owner.fighter.takeDamage(Fighter.getPower(this.owner.fighter)));
             }
 
             this.numTurns--;
@@ -54,6 +55,7 @@ export class ConfusedMonsterAi implements IAi {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "ConfusedMonsterAi";
         return ret;

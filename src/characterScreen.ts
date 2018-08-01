@@ -1,6 +1,7 @@
 import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
+import { Fighter } from "./Fighter";
 import { Level } from "./Level";
 
 export function characterScreen(display: ROT.Display,
@@ -20,10 +21,10 @@ export function characterScreen(display: ROT.Display,
     }
     if (entity.fighter) {
         winY += 2;
-        display.drawText(winX, winY, `Maximum HP: ${entity.fighter.maxHp}`);
+        display.drawText(winX, winY, `Maximum HP: ${Fighter.getMaxHp(entity.fighter)}`);
         winY++;
-        display.drawText(winX, winY, `Attack: ${entity.fighter.power}`);
+        display.drawText(winX, winY, `Attack: ${Fighter.getPower(entity.fighter)}`);
         winY++;
-        display.drawText(winX, winY, `Defense: ${entity.fighter.defense}`);
+        display.drawText(winX, winY, `Defense: ${Fighter.getDefense(entity.fighter)}`);
     }
 }

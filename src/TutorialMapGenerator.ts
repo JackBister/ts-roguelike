@@ -1,6 +1,7 @@
 import { BasicMonsterAi } from "./BasicMonsterAi";
 import { ConfusionScroll } from "./ConfusionScroll";
 import { Entity } from "./Entity";
+import { EquipmentSlot, Equippable } from "./Equippable";
 import { Fighter } from "./Fighter";
 import { FireballScroll } from "./FireballScroll";
 import { GameMap } from "./GameMap";
@@ -15,6 +16,8 @@ import { Stairs } from "./Stairs";
 
 export class TutorialMapGenerator implements IMapGenerator {
     private opts: IGameMapOptions;
+
+    private entityId = 1;
 
     public generate(opts: IGameMapOptions, player: Entity, entities: Entity[], dungeonLevel: number) {
         this.opts = {
@@ -68,6 +71,7 @@ export class TutorialMapGenerator implements IMapGenerator {
 
         if (ret.dungeonLevel > 1) {
             entities.push(new Entity(
+                this.entityId++,
                 room0center[0],
                 room0center[1],
                 "white",
@@ -85,6 +89,7 @@ export class TutorialMapGenerator implements IMapGenerator {
 
         const lastRoomCenter = rooms[rooms.length - 1].getCenter();
         entities.push(new Entity(
+            this.entityId++,
             lastRoomCenter[0],
             lastRoomCenter[1],
             "white",
@@ -173,6 +178,8 @@ export class TutorialMapGenerator implements IMapGenerator {
             fireballScroll: fromDungeonLevel([[6, 25]], currentLevel),
             healingPotion: 35,
             lightningScroll: fromDungeonLevel([[4, 25]], currentLevel),
+            shield: fromDungeonLevel([[8, 15]], currentLevel),
+            sword: fromDungeonLevel([[4, 5]], currentLevel),
         };
 
         for (let i = 0; i < numItems; ++i) {
@@ -183,6 +190,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                 const itemChoice = randomChoiceFromMap(itemChances);
                 if (itemChoice === "lightningScroll") {
                     item = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "yellow",
@@ -196,6 +204,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     );
                 } else if (itemChoice === "fireballScroll") {
                     item = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "red",
@@ -209,6 +218,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     );
                 } else if (itemChoice === "confusionScroll") {
                     item = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "lightpink",
@@ -222,6 +232,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     );
                 } else if (itemChoice === "healingPotion") {
                     item = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "violet",
@@ -232,6 +243,44 @@ export class TutorialMapGenerator implements IMapGenerator {
                         null,
                         null,
                         new HealingPotion(40),
+                    );
+                } else if (itemChoice === "shield") {
+                    item = new Entity(
+                        this.entityId++,
+                        x,
+                        y,
+                        "darkorange",
+                        "[",
+                        false,
+                        "Shield",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
+                    );
+                } else if (itemChoice === "sword") {
+                    item = new Entity(
+                        this.entityId++,
+                        x,
+                        y,
+                        "skyblue",
+                        "刀",
+                        false,
+                        "Sword",
+                        RenderOrder.ITEM,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new Equippable(EquipmentSlot.MAIN_HAND, 3, 0, 0),
                     );
                 }
                 entities.push(item);
@@ -246,6 +295,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                 const monsterChoice = randomChoiceFromMap(monsterChances);
                 if (monsterChoice === "orc") {
                     monster = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "white",
@@ -258,6 +308,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     );
                 } else if (monsterChoice === "troll") {
                     monster = new Entity(
+                        this.entityId++,
                         x,
                         y,
                         "white",

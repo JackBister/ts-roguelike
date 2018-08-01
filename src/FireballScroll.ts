@@ -50,6 +50,7 @@ export class FireballScroll implements IItem {
 
     public toJSON() {
         const ret = { ...(this as any) };
+        ret._ownerId = ret.owner.id;
         ret.owner = undefined;
         ret._type = "FireballScroll";
         return ret;

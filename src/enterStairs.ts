@@ -1,4 +1,5 @@
 import { Entity } from "./Entity";
+import { Fighter } from "./Fighter";
 import { GameMap } from "./GameMap";
 import { CONSTANTS } from "./main";
 import { IMapGenerator } from "./MapGenerator";
@@ -38,7 +39,10 @@ export function enterStairs(
             entities,
             stairs.floor));
 
-        player.fighter.currHp += player.fighter.maxHp / 2;
+        player.fighter.currHp += Fighter.getMaxHp(player.fighter) / 2;
+        if (player.fighter.currHp > Fighter.getMaxHp(player.fighter)) {
+            player.fighter.currHp = Fighter.getMaxHp(player.fighter);
+        }
         messageLog.addMessage(
             new Message("You rest for a moment, recovering your health.", "violet"),
         );

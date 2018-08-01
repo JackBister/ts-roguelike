@@ -36,7 +36,7 @@ export class GameMap {
                 ne.inventory.owner = ne;
             }
             if (e.item) {
-                ne.item = itemFromObject(e.item).item;
+                ne.item = itemFromObject(e).item;
                 ne.item.owner = ne;
             }
             if (e.stairs) {

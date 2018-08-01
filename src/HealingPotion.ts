@@ -7,12 +7,7 @@ import { ITurnResult } from "./TurnResult";
 export class HealingPotion implements IItem {
     public owner: Entity;
 
-    private _name = "Healing Potion";
-
-    constructor(private healAmount: number, name?: string) {
-        if (name) {
-            this._name = name;
-        }
+    constructor(private healAmount: number, public readonly name: string = "Healing Potion") {
     }
 
     public use(user: Entity, entities: Entity[]) {
@@ -51,10 +46,6 @@ export class HealingPotion implements IItem {
         }
 
         return results;
-    }
-
-    public get name() {
-        return this._name;
     }
 
     public toJSON() {

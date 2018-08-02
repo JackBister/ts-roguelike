@@ -1,7 +1,5 @@
 import * as ROT from "rot-js";
 
-import { Equipment } from "./Equipment";
-import { Equippable } from "./Equippable";
 import { GameMap } from "./GameMap";
 import { RenderOrder } from "./RenderOrder";
 import { Stairs } from "./Stairs";
@@ -17,21 +15,11 @@ export class Entity {
         public name: string,
         public renderOrder: RenderOrder,
         public stairs: Stairs = null,
-        public equipment: Equipment = null,
-        public equippable: Equippable = null,
         public isActive: boolean = true,
         public mapId: number = null,
     ) {
         if (this.stairs) {
             this.stairs.owner = this;
-        }
-
-        if (this.equipment) {
-            this.equipment.owner = this;
-        }
-
-        if (this.equippable) {
-            this.equippable.owner = this;
         }
     }
 

@@ -3,14 +3,16 @@ import { ComponentService } from "../components/Component.service";
 import { ConfusedMonsterAiComponent } from "../components/ConfusedMonsterAiComponent";
 import { FighterComponent } from "../components/FighterComponent";
 import { EntityService } from "../entities/Entity.service";
+import { EventResult } from "../EventResult";
 import { AttackEvent } from "../events/AttackEvent";
 import { REvent } from "../events/Event";
+import { GetPropertyEvent } from "../events/GetPropertyEvent";
 import { TakeDamageEvent } from "../events/TakeDamageEvent";
 import { Message } from "../Message";
 import { randomInt } from "../randomInt";
 import { FovService } from "../services/Fov.service";
 import { MapService } from "../services/Map.service";
-import { ITurnResult } from "../TurnResult";
+import { sumPropertyEvents } from "../sumPropertyEvents";
 import { ISystem } from "./System";
 import { SystemService } from "./System.service";
 
@@ -31,7 +33,7 @@ export class AiSystem implements ISystem {
         @inject("SystemService") private systems: SystemService,
     ) { }
 
-    public onEvent(entityId: number, event: REvent): ITurnResult[] {
+    public onEvent(entityId: number, event: REvent): EventResult[] {
         if (event.type !== "ThinkEvent") {
             return [];
         }
@@ -44,7 +46,7 @@ export class AiSystem implements ISystem {
             return [];
         }
 
-        let results: ITurnResult[] = [];
+        let results: EventResult[] = [];
 
         for (const ai of entityComponents) {
             if (!ai.isActive) {
@@ -62,7 +64,7 @@ export class AiSystem implements ISystem {
             throw new Error("Player not found!");
         }
 
-        let results: ITurnResult[] = [];
+        let results: EventResult[] = [];
 
         const monster = this.entities.getEntityById(entityId);
 
@@ -89,7 +91,7 @@ export class AiSystem implements ISystem {
     }
 
     private confusedMonsterAiThink(entityId: number, ai: ConfusedMonsterAiComponent) {
-        let results: ITurnResult[] = [];
+        let results: EventResult[] = [];
 
         const monster = this.entities.getEntityById(entityId);
 
@@ -107,10 +109,13 @@ export class AiSystem implements ISystem {
             if (monsterFighter && hurtChance === 0) {
                 results.push({
                     message: new Message(`The ${monster.name} hurt itself in its confusion!`, "red"),
+                    type: "message",
                 });
+                const power = sumPropertyEvents(
+                    this.systems.dispatchEvent(monster.id, new GetPropertyEvent("power")),
+                );
                 results = results.concat(
-                    // TODO: Proper power calculation
-                    this.systems.dispatchEvent(monster.id, new TakeDamageEvent(monsterFighter.basePower)),
+                    this.systems.dispatchEvent(monster.id, new TakeDamageEvent(power)),
                 );
             }
 
@@ -121,6 +126,7 @@ export class AiSystem implements ISystem {
             ai.isActive = false;
             results.push({
                 message: new Message(`The ${monster.name} is no longer confused!`, "red"),
+                type: "message",
             });
         }
 

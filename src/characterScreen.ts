@@ -5,8 +5,9 @@ import { FighterComponent } from "./components/FighterComponent";
 import { LevelComponent } from "./components/LevelComponent";
 import { container } from "./config/container";
 import { Entity } from "./Entity";
+import { getFighterStats } from "./getFighterStats";
 
-const componentService: ComponentService = container.get<ComponentService>("ComponentService");
+const componentService = container.get<ComponentService>("ComponentService");
 
 export function characterScreen(display: ROT.Display,
                                 entity: Entity,
@@ -25,23 +26,12 @@ export function characterScreen(display: ROT.Display,
         display.drawText(winX, winY, `Experience: ${entityLevel.currentXp}/${LevelComponent.xpToLevel(entityLevel)}`);
     }
 
-    const entityFighter = componentService
-        .getComponentByEntityIdAndType(entity.id, "FighterComponent") as FighterComponent;
+    const { maxHp, power, defense } = getFighterStats(entity.id);
 
-    if (entityFighter) {
-        winY += 2;
-        display.drawText(winX, winY, `Maximum HP: ${entityFighter.baseMaxHp}`);
-        winY++;
-        display.drawText(winX, winY, `Attack: ${entityFighter.basePower}`);
-        winY++;
-        display.drawText(winX, winY, `Defense: ${entityFighter.baseDefense}`);
-        // TODO: calculations
-        /*
-        display.drawText(winX, winY, `Maximum HP: ${Fighter.getMaxHp(entity.fighter)}`);
-        winY++;
-        display.drawText(winX, winY, `Attack: ${Fighter.getPower(entity.fighter)}`);
-        winY++;
-        display.drawText(winX, winY, `Defense: ${Fighter.getDefense(entity.fighter)}`);
-        */
-    }
+    winY += 2;
+    display.drawText(winX, winY, `Maximum HP: ${maxHp}`);
+    winY++;
+    display.drawText(winX, winY, `Attack: ${power}`);
+    winY++;
+    display.drawText(winX, winY, `Defense: ${defense}`);
 }

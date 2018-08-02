@@ -3,6 +3,7 @@ import { IAction } from "./Action";
 import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { ComponentService } from "./components/Component.service";
+import { EquipmentComponent } from "./components/EquipmentComponent";
 import { FighterComponent } from "./components/FighterComponent";
 import { InventoryComponent } from "./components/InventoryComponent";
 import { LevelComponent } from "./components/LevelComponent";
@@ -12,8 +13,7 @@ import { drawTouchIcons } from "./drawTouchIcons";
 import { enterStairs } from "./enterStairs";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
-import { Equipment } from "./Equipment";
-import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
+import { EventResult } from "./EventResult";
 import { AttackEvent } from "./events/AttackEvent";
 import { DropEvent } from "./events/DropEvent";
 import { GainXpEvent } from "./events/GainXpEvent";
@@ -21,6 +21,7 @@ import { PickupEvent } from "./events/PickupEvent";
 import { ThinkEvent } from "./events/ThinkEvent";
 import { UseEvent } from "./events/UseEvent";
 import { GameState } from "./GameState";
+import { getFighterStats } from "./getFighterStats";
 import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
@@ -30,11 +31,10 @@ import { ISavedGame, saveGame } from "./saveGame";
 import { FovService } from "./services/Fov.service";
 import { MapService } from "./services/Map.service";
 import { SystemService } from "./systems/System.service";
-import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 // TODO: Ugly hack!!!!
-import "./services/usefunctions/index";
+import "./services/usefunctions";
 
 export const CONSTANTS = {
     BAR_WIDTH: 20,
@@ -121,13 +121,13 @@ const fovService = container.get<FovService>("FovService");
 const mapService = container.get<MapService>("MapService");
 const systemService = container.get<SystemService>("SystemService");
 
-function addResultsToMessageLog(results: ITurnResult[]) {
+function addResultsToMessageLog(results: EventResult[]) {
     for (const v of results) {
-        if (v.message) {
+        if (v.type === "message") {
             messageLog.addMessage(v.message);
         }
 
-        if (v.dead) {
+        if (v.type === "dead") {
             let deathMessage = null;
             if (v.dead === player) {
                 const res = killPlayer(v.dead);
@@ -141,44 +141,40 @@ function addResultsToMessageLog(results: ITurnResult[]) {
             messageLog.addMessage(deathMessage);
         }
 
-        if (v.equip) {
-            const equipResults = Equipment.toggleEquip(player.equipment, v.equip.equippable);
-
-            for (const res of equipResults) {
-                if (res.dequipped) {
-                    messageLog.addMessage(new Message(`You unequip the ${res.dequipped.name}.`, "white"));
-                }
-                if (res.equipped) {
-                    messageLog.addMessage(new Message(`You equip the ${res.equipped.name}.`, "white"));
-                }
-            }
+        if (v.type === "dequipped") {
+            const dequipped = entityService.getEntityById(v.dequipped);
+            messageLog.addMessage(new Message(`You unequip the ${dequipped.name}.`, "white"));
+        }
+        if (v.type === "equipped") {
+            const equipped = entityService.getEntityById(v.equipped);
+            messageLog.addMessage(new Message(`You equip the ${equipped.name}.`, "white"));
         }
 
-        if (v.itemAdded) {
+        if (v.type === "itemAdded") {
             const item = entityService.getEntityById(v.itemAdded);
             item.isActive = false;
         }
 
-        if (v.itemDropped) {
+        if (v.type === "itemDropped") {
             const item = entityService.getEntityById(v.itemDropped);
             item.isActive = false;
         }
 
-        if (v.targeting) {
+        if (v.type === "targeting") {
             previousGameState = GameState.PLAYER_TURN;
             gameState = GameState.TARGETING;
 
             targetTile = [player.x, player.y];
         }
 
-        if (v.xp) {
+        if (v.type === "xp") {
             messageLog.addMessage(
                 new Message(`You gain ${v.xp} experience points.`, "white"),
             );
 
             const xpResult = systemService.dispatchEvent(player.id, new GainXpEvent(v.xp));
 
-            if (xpResult.some((r) => r.leveledUp)) {
+            if (xpResult.some((r) => r.type === "leveledUp")) {
 
                 messageLog.addMessage(
                     new Message("You have leveled up!", "yellow"),
@@ -251,23 +247,14 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
     }
     drawCon(mainDisplay, target);
     if (gameState === GameState.LEVEL_UP) {
-        const playerFighter = componentService
-            .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
+        const { maxHp, power, defense } = getFighterStats(player.id);
         menu(mainDisplay,
             "Level up! Choose a stat to raise:",
-            // TODO: proper calculation
             [
-                `HP +20 (current: ${playerFighter.baseMaxHp})`,
-                `Attack +1 (current: ${playerFighter.basePower})`,
-                `Defense +1 (current: ${playerFighter.baseDefense})`,
+                `HP +20 (current: ${maxHp})`,
+                `Attack +1 (current: ${power})`,
+                `Defense +1 (current: ${defense})`,
             ],
-            /*
-            [
-                `HP +20 (current: ${Fighter.getMaxHp(player.fighter)})`,
-                `Attack +1 (current: ${Fighter.getPower(player.fighter)})`,
-                `Defense +1 (current: ${Fighter.getDefense(player.fighter)})`,
-            ],
-            */
             menuSelection,
             40,
             CONSTANTS.SCREEN_WIDTH,
@@ -443,7 +430,7 @@ function entityTick() {
         return;
     }
 
-    let results: ITurnResult[] = [];
+    let results: EventResult[] = [];
     for (const v of entityService.entities) {
         results = results.concat(systemService.dispatchEvent(v.id, new ThinkEvent()));
         /*
@@ -672,7 +659,7 @@ function playerTick(action: IAction) {
     if (gameState === GameState.ENEMY_TURN) {
         return;
     }
-    let results: ITurnResult[] = [];
+    let results: EventResult[] = [];
 
     if (gameState === GameState.LEVEL_UP) {
         if (action.type === "move") {
@@ -718,10 +705,9 @@ function playerTick(action: IAction) {
                         true,
                         "Player",
                         RenderOrder.ACTOR,
-                        null,
-                        new Equipment(),
                     );
                     entityService.addEntity(player);
+                    componentService.addComponent(new EquipmentComponent(player.id));
                     componentService.addComponent(new FighterComponent(player.id, 100, 1, 2));
                     componentService.addComponent(new InventoryComponent(player.id, 26));
                     componentService.addComponent(new LevelComponent(player.id));

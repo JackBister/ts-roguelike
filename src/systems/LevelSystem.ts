@@ -1,8 +1,8 @@
 import { inject, injectable } from "inversify";
 import { ComponentService } from "../components/Component.service";
 import { LevelComponent } from "../components/LevelComponent";
+import { EventResult } from "../EventResult";
 import { REvent } from "../events/Event";
-import { ITurnResult } from "../TurnResult";
 import { ISystem } from "./System";
 
 @injectable()
@@ -12,20 +12,22 @@ export class LevelSystem implements ISystem {
         @inject("ComponentService") private componentService: ComponentService,
     ) { }
 
-    public onEvent(entityId: number, event: REvent): ITurnResult[] {
+    public onEvent(entityId: number, event: REvent): EventResult[] {
         if (event.type !== "GainXpEvent") {
             return [];
         }
 
-        const result: ITurnResult[] = [];
+        const result: EventResult[] = [];
 
         const levelComponent = this.componentService
             .getComponentByEntityIdAndType(entityId, "LevelComponent") as LevelComponent;
         if (levelComponent) {
             const didLevelUp = LevelComponent.addXp(levelComponent, event.xp);
-            result.push({
-                leveledUp: didLevelUp,
-            });
+            if (didLevelUp) {
+                result.push({
+                    type: "leveledUp",
+                });
+            }
         }
 
         return result;

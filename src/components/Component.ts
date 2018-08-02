@@ -1,4 +1,6 @@
 import { AiComponent } from "./AiComponent";
+import { EquipmentComponent } from "./EquipmentComponent";
+import { EquippableComponent } from "./EquippableComponent";
 import { FighterComponent } from "./FighterComponent";
 import { InventoryComponent } from "./InventoryComponent";
 import { LevelComponent } from "./LevelComponent";
@@ -14,6 +16,8 @@ export interface IComponent {
 }
 
 export type Component = AiComponent
+    | EquippableComponent
+    | EquipmentComponent
     | FighterComponent
     | InventoryComponent
     | LevelComponent

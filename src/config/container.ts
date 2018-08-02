@@ -5,6 +5,7 @@ import { FovService } from "../services/Fov.service";
 import { MapService } from "../services/Map.service";
 import { UseFunctionsService } from "../services/UseFunctions.service";
 import { AiSystem } from "../systems/AiSystem";
+import { EquipmentSystem } from "../systems/EquipmentSystem";
 import { FighterSystem } from "../systems/FighterSystem";
 import { LevelSystem } from "../systems/LevelSystem";
 import { PickupSystem } from "../systems/PickupSystem";
@@ -22,6 +23,7 @@ container.bind<UseFunctionsService>("UseFunctionsService").toConstantValue(new U
 
 const systemService = container.get<SystemService>("SystemService");
 systemService.addSystem(container.resolve(AiSystem));
+systemService.addSystem(container.resolve(EquipmentSystem));
 systemService.addSystem(container.resolve(FighterSystem));
 systemService.addSystem(container.resolve(LevelSystem));
 systemService.addSystem(container.resolve(PickupSystem));

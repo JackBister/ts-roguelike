@@ -1,7 +1,3 @@
-import { Entity } from "./Entity";
-import { Equipment } from "./Equipment";
-import { Equippable } from "./Equippable";
-import { Stairs } from "./Stairs";
 import { ITile } from "./Tile";
 
 export class GameMap {

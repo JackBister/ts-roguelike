@@ -2,10 +2,10 @@ import { ComponentService } from "../../components/Component.service";
 import { FighterComponent } from "../../components/FighterComponent";
 import { container } from "../../config/container";
 import { EntityService } from "../../entities/Entity.service";
+import { EventResult } from "../../EventResult";
 import { UseEvent } from "../../events/UseEvent";
 import { Message } from "../../Message";
-import { UseFunctionsService } from "../../services/UseFunctions.service";
-import { ITurnResult } from "../../TurnResult";
+import { UseFunctionsService } from "../UseFunctions.service";
 
 const componentService = container.get<ComponentService>("ComponentService");
 const entityService = container.get<EntityService>("EntityService");
@@ -19,12 +19,12 @@ function healingPotion(entityId: number, event: UseEvent) {
     const userFighter = componentService
         .getComponentByEntityIdAndType(event.instigatorId, "FighterComponent") as FighterComponent;
 
-    const results: ITurnResult[] = [];
+    const results: EventResult[] = [];
 
     if (!user || !userFighter) {
         results.push({
-            consumed: false,
             message: new Message(`${user.name} tries to use a healing potion, but realizes it can't do so.`, "red"),
+            type: "message",
         });
         return results;
     }
@@ -33,22 +33,25 @@ function healingPotion(entityId: number, event: UseEvent) {
     if (userFighter.currHp >= userFighter.baseMaxHp) {
         // if (userFighter.currHp >= Fighter.getMaxHp(user.fighter)) {
         results.push({
-            consumed: false,
             message: new Message("You are already at full health.", "yellow"),
+            type: "message",
         });
         return results;
     }
 
     if (userFighter.currHp <= 0) {
         results.push({
-            consumed: false,
             message: new Message("You are dead. The potion doesn't really help.", "yellow"),
+            type: "message",
         });
         return results;
     }
     results.push({
-        consumed: true,
+        type: "consumed",
+    });
+    results.push({
         message: new Message("Your wounds start to feel better!", "green"),
+        type: "message",
     });
     userFighter.currHp += HEALING_POTION_CONSTANTS.HEAL_AMOUNT;
     // TODO: calculation

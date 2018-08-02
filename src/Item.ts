@@ -1,8 +1,8 @@
 import * as ROT from "rot-js";
 
 import { Entity } from "./Entity";
+import { EventResult } from "./EventResult";
 import { FovService } from "./services/Fov.service";
-import { ITurnResult } from "./TurnResult";
 
 /*
 export function itemFromObject(obj: any): Entity {
@@ -101,5 +101,5 @@ export interface IItem {
           fovService: FovService,
           targetX?: number,
           targetY?: number,
-    ) => ITurnResult[];
+    ) => EventResult[];
 }

@@ -3,9 +3,9 @@ import { ComponentService } from "../components/Component.service";
 import { InventoryComponent } from "../components/InventoryComponent";
 import { LevelComponent } from "../components/LevelComponent";
 import { UsableComponent } from "../components/UsableComponent";
+import { EventResult } from "../EventResult";
 import { REvent } from "../events/Event";
 import { UseFunctionsService } from "../services/UseFunctions.service";
-import { ITurnResult } from "../TurnResult";
 import { ISystem } from "./System";
 import { SystemService } from "./System.service";
 
@@ -19,7 +19,7 @@ export class UseSystem implements ISystem {
 
     ) { }
 
-    public onEvent(entityId: number, event: REvent): ITurnResult[] {
+    public onEvent(entityId: number, event: REvent): EventResult[] {
         if (event.type !== "UseEvent") {
             return [];
         }
@@ -42,19 +42,19 @@ export class UseSystem implements ISystem {
             return [];
         }
 
-        let results: ITurnResult[] = [];
+        let results: EventResult[] = [];
 
         if (usable.requiresTargeting && event.targetX === undefined && event.targetY === undefined) {
             results.push({
                 targeting: entityId,
+                type: "targeting",
             });
             return results;
         }
 
-        const itemUseResults = this.useFunctionsService.getFunction(usable.useFunction)(entityId, event);
+        const itemUseResults: EventResult[] = this.useFunctionsService.getFunction(usable.useFunction)(entityId, event);
 
-        if (itemUseResults.some((r) => r.consumed)) {
-            // TODO:
+        if (itemUseResults.some((r) => r.type === "consumed")) {
             const inventoryComponent = this.componentService
                 .getComponentByEntityIdAndType(event.instigatorId, "InventoryComponent") as InventoryComponent;
 

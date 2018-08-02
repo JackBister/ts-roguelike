@@ -2,14 +2,14 @@ import { ComponentService } from "../../components/Component.service";
 import { container } from "../../config/container";
 import { EntityService } from "../../entities/Entity.service";
 import { Entity } from "../../Entity";
+import { EventResult } from "../../EventResult";
 import { TakeDamageEvent } from "../../events/TakeDamageEvent";
 import { UseEvent } from "../../events/UseEvent";
 import { CONSTANTS } from "../../main";
 import { Message } from "../../Message";
-import { FovService } from "../../services/Fov.service";
-import { UseFunctionsService } from "../../services/UseFunctions.service";
 import { SystemService } from "../../systems/System.service";
-import { ITurnResult } from "../../TurnResult";
+import { FovService } from "../Fov.service";
+import { UseFunctionsService } from "../UseFunctions.service";
 
 const componentService = container.get<ComponentService>("ComponentService");
 const entityService = container.get<EntityService>("EntityService");
@@ -28,7 +28,7 @@ function lightningScroll(entityId: number, event: UseEvent) {
         return [];
     }
 
-    let results: ITurnResult[] = [];
+    let results: EventResult[] = [];
     let targets: Entity[] = [];
 
     fovService.computeFov(user.x, user.y, CONSTANTS.PLAYER_FOV, (x, y) => {
@@ -48,20 +48,22 @@ function lightningScroll(entityId: number, event: UseEvent) {
     if (targetsWithDist.length > 1) {
         const target = targets[targetsWithDist[1].idx];
         results.push({
-            consumed: true,
+            type: "consumed",
+        });
+        results.push({
             message: new Message(
                 `A lightning bolt strikes ${target.name} for ${LIGHTNING_CONSTANTS.DAMAGE} damage.`,
                 "white",
             ),
-            target: target,
+            type: "message",
         });
         results = results.concat(
             systemService.dispatchEvent(target.id, new TakeDamageEvent(LIGHTNING_CONSTANTS.DAMAGE)),
         );
     } else {
         results.push({
-            consumed: false,
             message: new Message("There are no targets in range.", "red"),
+            type: "message",
         });
     }
 

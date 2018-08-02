@@ -1,12 +1,12 @@
 import { inject, injectable } from "inversify";
 import { BasicMonsterAiComponent } from "./components/BasicMonsterAiComponent";
 import { ComponentService } from "./components/Component.service";
+import { EquipmentSlot, EquippableComponent } from "./components/EquippableComponent";
 import { FighterComponent } from "./components/FighterComponent";
 import { PickupableComponent } from "./components/PickupableComponent";
 import { UsableComponent } from "./components/UsableComponent";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
-import { EquipmentSlot, Equippable } from "./Equippable";
 import { GameMap } from "./GameMap";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
@@ -249,9 +249,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Shield",
                         RenderOrder.ITEM,
-                        null,
-                        null,
-                        new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
+                    );
+                    this.componentService.addComponent(
+                        new EquippableComponent(item.id, EquipmentSlot.OFF_HAND, 0, 1, 0),
                     );
                     this.componentService.addComponent(new PickupableComponent(item.id, "Shield"));
                 } else if (itemChoice === "sword") {
@@ -264,9 +264,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Sword",
                         RenderOrder.ITEM,
-                        null,
-                        null,
-                        new Equippable(EquipmentSlot.MAIN_HAND, 3, 0, 0),
+                    );
+                    this.componentService.addComponent(
+                        new EquippableComponent(item.id, EquipmentSlot.MAIN_HAND, 3, 0, 0),
                     );
                     this.componentService.addComponent(new PickupableComponent(item.id, "Sword"));
                 }

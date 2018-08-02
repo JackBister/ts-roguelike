@@ -3,12 +3,12 @@ import { ConfusedMonsterAiComponent } from "../../components/ConfusedMonsterAiCo
 import { container } from "../../config/container";
 import { EntityService } from "../../entities/Entity.service";
 import { Entity } from "../../Entity";
+import { EventResult } from "../../EventResult";
 import { UseEvent } from "../../events/UseEvent";
 import { CONSTANTS } from "../../main";
 import { Message } from "../../Message";
-import { FovService } from "../../services/Fov.service";
-import { UseFunctionsService } from "../../services/UseFunctions.service";
-import { ITurnResult } from "../../TurnResult";
+import { FovService } from "../Fov.service";
+import { UseFunctionsService } from "../UseFunctions.service";
 
 const componentService = container.get<ComponentService>("ComponentService");
 const entityService = container.get<EntityService>("EntityService");
@@ -19,7 +19,7 @@ const CONFUSION_CONSTANTS = {
 };
 
 function confusionScroll(entityId: number, event: UseEvent) {
-    const results: ITurnResult[] = [];
+    const results: EventResult[] = [];
     let inFov = false;
 
     const user = entityService.getEntityById(event.instigatorId);
@@ -36,8 +36,8 @@ function confusionScroll(entityId: number, event: UseEvent) {
 
     if (!inFov) {
         results.push({
-            consumed: false,
             message: new Message("You cannot target a tile outside your field of view.", "yellow"),
+            type: "message",
         });
         return results;
     }
@@ -55,8 +55,8 @@ function confusionScroll(entityId: number, event: UseEvent) {
 
     if (targets.length < 1) {
         results.push({
-            consumed: false,
             message: new Message("There is nothing to target at that location.", "yellow"),
+            type: "message",
         });
         return results;
     }
@@ -76,11 +76,14 @@ function confusionScroll(entityId: number, event: UseEvent) {
     );
 
     results.push({
-        consumed: true,
+        type: "consumed",
+    });
+    results.push({
         message: new Message(
             `The eyes of the ${target.name} look vacant as it starts to stumble around.`,
             "lightgreen",
         ),
+        type: "message",
     });
 
     return results;

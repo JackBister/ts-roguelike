@@ -3,16 +3,20 @@ import { FighterComponent } from "./components/FighterComponent";
 import { container } from "./config/container";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
+import { GetPropertyEvent } from "./events/GetPropertyEvent";
 import { GameMap } from "./GameMap";
 import { CONSTANTS } from "./main";
 import { IMapGenerator } from "./MapGenerator";
 import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { Stairs } from "./Stairs";
+import { sumPropertyEvents } from "./sumPropertyEvents";
+import { SystemService } from "./systems/System.service";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 const componentService = container.get<ComponentService>("ComponentService");
 const entityService = container.get<EntityService>("EntityService");
+const systemService = container.get<SystemService>("SystemService");
 
 export function enterStairs(
     stairs: Stairs,
@@ -47,17 +51,13 @@ export function enterStairs(
         const playerFighter = componentService
             .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
 
-        // TODO: proper hp calculation
-        playerFighter.currHp += playerFighter.baseMaxHp / 2;
-        if (playerFighter.currHp > playerFighter.baseMaxHp) {
-            playerFighter.currHp = playerFighter.baseMaxHp;
+        const maxHp = sumPropertyEvents(
+            systemService.dispatchEvent(player.id, new GetPropertyEvent("maxHp")),
+        );
+        playerFighter.currHp += maxHp / 2;
+        if (playerFighter.currHp > maxHp) {
+            playerFighter.currHp = maxHp;
         }
-        /*
-            player.fighter.currHp += Fighter.getMaxHp(player.fighter) / 2;
-            if (player.fighter.currHp > Fighter.getMaxHp(player.fighter)) {
-                player.fighter.currHp = Fighter.getMaxHp(player.fighter);
-            }
-        */
         messageLog.addMessage(
             new Message("You rest for a moment, recovering your health.", "violet"),
         );

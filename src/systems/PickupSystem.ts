@@ -4,9 +4,9 @@ import { InventoryComponent } from "../components/InventoryComponent";
 import { LevelComponent } from "../components/LevelComponent";
 import { EntityService } from "../entities/Entity.service";
 import { Entity } from "../Entity";
+import { EventResult } from "../EventResult";
 import { REvent } from "../events/Event";
 import { Message } from "../Message";
-import { ITurnResult } from "../TurnResult";
 import { ISystem } from "./System";
 
 @injectable()
@@ -17,7 +17,7 @@ export class PickupSystem implements ISystem {
         @inject("ComponentService") private componentService: ComponentService,
     ) { }
 
-    public onEvent(entityId: number, event: REvent): ITurnResult[] {
+    public onEvent(entityId: number, event: REvent): EventResult[] {
         if (event.type !== "DropEvent" && event.type !== "PickupEvent") {
             return [];
         }
@@ -43,8 +43,8 @@ export class PickupSystem implements ISystem {
                    instigatorId: number,
                    item: Entity,
                    dropperInventory: InventoryComponent,
-    ): ITurnResult[] {
-        const results: ITurnResult[] = [];
+    ): EventResult[] {
+        const results: EventResult[] = [];
 
         // TODO: This will be handled by the EquippableComponent
         /*
@@ -64,25 +64,36 @@ export class PickupSystem implements ISystem {
 
         results.push({
             itemDropped: item.id,
+            type: "itemDropped",
+        });
+        results.push({
             message: new Message(`You drop the ${item.name}.`, "yellow"),
+            type: "message",
         });
 
         return results;
     }
 
-    private onPickup(entityId: number, item: Entity, pickerInventory: InventoryComponent): ITurnResult[] {
-        const result: ITurnResult[] = [];
+    private onPickup(entityId: number, item: Entity, pickerInventory: InventoryComponent): EventResult[] {
+        const results: EventResult[] = [];
 
         if (pickerInventory.items.length >= pickerInventory.capacity) {
-            result.push({ message: new Message("Your inventory is full.", "yellow") });
+            results.push({
+                message: new Message("Your inventory is full.", "yellow"),
+                type: "message",
+            });
         } else {
-            result.push({
+            results.push({
                 itemAdded: entityId,
+                type: "itemAdded",
+            });
+            results.push({
                 message: new Message(`You pick up the ${item.name}!`, "blue"),
+                type: "message",
             });
             pickerInventory.items.push(entityId);
         }
 
-        return result;
+        return results;
     }
 }

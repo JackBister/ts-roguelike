@@ -1,7 +1,7 @@
+import { EventResult } from "../EventResult";
 import { UseEvent } from "../events/UseEvent";
-import { ITurnResult } from "../TurnResult";
 
-export type UseFunction = (entityId: number, event: UseEvent) => ITurnResult[];
+export type UseFunction = (entityId: number, event: UseEvent) => EventResult[];
 
 export class UseFunctionsService {
     private useFunctions: Map<string, UseFunction> = new Map<string, UseFunction>();

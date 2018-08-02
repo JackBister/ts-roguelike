@@ -41,7 +41,7 @@ function lightningScroll(entityId: number, event: UseEvent) {
     });
 
     const targetsWithDist = targets
-        .map((e, idx) => ({ idx: idx, dist: user.distanceTo(e) }))
+        .map((e, idx) => ({ idx: idx, dist: Entity.distanceTo(user, e) }))
         .filter((e) => e.dist < LIGHTNING_CONSTANTS.MAX_RANGE)
         .sort((e) => e.dist);
 

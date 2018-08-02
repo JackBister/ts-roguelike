@@ -21,14 +21,14 @@ import { GetPropertyEvent } from "./events/GetPropertyEvent";
 import { PickupEvent } from "./events/PickupEvent";
 import { ThinkEvent } from "./events/ThinkEvent";
 import { UseEvent } from "./events/UseEvent";
+import { GameMap } from "./GameMap";
 import { GameState } from "./GameState";
 import { getFighterStats } from "./getFighterStats";
-import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
-import { ISavedGame, saveGame } from "./saveGame";
+import { INewSavedGame, ISavedGame, newSaveGame } from "./saveGame";
 import { FovService } from "./services/Fov.service";
 import { MapService } from "./services/Map.service";
 import { sumPropertyEvents } from "./sumPropertyEvents";
@@ -36,6 +36,7 @@ import { SystemService } from "./systems/System.service";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 // TODO: Ugly hack!!!!
+import { StairComponent } from "./components/StairComponent";
 import "./services/usefunctions";
 
 export const CONSTANTS = {
@@ -106,7 +107,7 @@ let currentMap = 0;
 */
 // let entities: Entity[] = [];
 let gameState: GameState = GameState.MAIN_MENU;
-const knownMaps = [0];
+let knownMaps = [1];
 let lastPointedEntityName: string = "";
 // let maps: GameMap[] = [];
 let menuSelection = 0;
@@ -127,7 +128,10 @@ const systemService = container.get<SystemService>("SystemService");
 function addResultsToMessageLog(results: EventResult[]) {
     for (const v of results) {
         if (v.type === "message") {
-            messageLog.addMessage(v.message);
+            MessageLog.addMessage(
+                messageLog,
+                v.message,
+            );
         }
 
         if (v.type === "dead") {
@@ -141,16 +145,25 @@ function addResultsToMessageLog(results: EventResult[]) {
                 deathMessage = res.message;
             }
 
-            messageLog.addMessage(deathMessage);
+            MessageLog.addMessage(
+                messageLog,
+                deathMessage,
+            );
         }
 
         if (v.type === "dequipped") {
             const dequipped = entityService.getEntityById(v.dequipped);
-            messageLog.addMessage(new Message(`You unequip the ${dequipped.name}.`, "white"));
+            MessageLog.addMessage(
+                messageLog,
+                new Message(`You unequip the ${dequipped.name}.`, "white"),
+            );
         }
         if (v.type === "equipped") {
             const equipped = entityService.getEntityById(v.equipped);
-            messageLog.addMessage(new Message(`You equip the ${equipped.name}.`, "white"));
+            MessageLog.addMessage(
+                messageLog,
+                new Message(`You equip the ${equipped.name}.`, "white"),
+            );
         }
 
         if (v.type === "itemAdded") {
@@ -164,7 +177,7 @@ function addResultsToMessageLog(results: EventResult[]) {
         }
 
         if (v.type === "stairsEntered") {
-            // TODO: ?
+            const oldMapId = mapService.getCurrentMapId();
             if (!knownMaps.includes(v.newMapId)) {
                 mapService.addMap(new TutorialMapGenerator(entityService, componentService, mapService).generate(
                     {
@@ -187,7 +200,8 @@ function addResultsToMessageLog(results: EventResult[]) {
                 if (playerFighter.currHp > maxHp) {
                     playerFighter.currHp = maxHp;
                 }
-                messageLog.addMessage(
+                MessageLog.addMessage(
+                    messageLog,
                     new Message("You rest for a moment, recovering your health.", "violet"),
                 );
 
@@ -198,6 +212,14 @@ function addResultsToMessageLog(results: EventResult[]) {
             entityService.entities.forEach((e) => {
                 if (e.mapId !== v.newMapId) {
                     e.isActive = false;
+                } else {
+                    e.isActive = true;
+                    const stairComponent = componentService
+                        .getComponentByEntityIdAndType(e.id, "StairComponent") as StairComponent;
+                    if (stairComponent && stairComponent.mapId === oldMapId) {
+                        player.x = e.x;
+                        player.y = e.y;
+                    }
                 }
             });
         }
@@ -210,7 +232,8 @@ function addResultsToMessageLog(results: EventResult[]) {
         }
 
         if (v.type === "xp") {
-            messageLog.addMessage(
+            MessageLog.addMessage(
+                messageLog,
                 new Message(`You gain ${v.xp} experience points.`, "white"),
             );
 
@@ -218,7 +241,8 @@ function addResultsToMessageLog(results: EventResult[]) {
 
             if (xpResult.some((r) => r.type === "leveledUp")) {
 
-                messageLog.addMessage(
+                MessageLog.addMessage(
+                    messageLog,
                     new Message("You have leveled up!", "yellow"),
                 );
                 previousGameState = gameState;
@@ -267,7 +291,7 @@ function calculateCanvasSizes(mainDisplay: ROT.Display, panelDisplay: ROT.Displa
 
     panelDisplay.setOptions({ height: panelHeight, width: panelWidth });
 
-    messageLog.height = panelHeight - 1;
+    MessageLog.setHeight(messageLog, panelHeight - 1);
 }
 
 function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) {
@@ -346,7 +370,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; ++y) {
             const finalPosX = x - mapX0 + conX0;
             const finalPosY = y - mapY0 + conY0;
-            const tile = mapService.getCurrentMap().getTile(x, y);
+            const tile = GameMap.getTile(mapService.getCurrentMap(), x, y);
             if (tile.isSeen) {
                 if (tile.blocksSight) {
                     display.draw(finalPosX, finalPosY, "", null, COLORS.darkWall);
@@ -364,7 +388,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         visibleCoordinates.push([x, y]);
         const finalPosX = x - mapX0 + conX0;
         const finalPosY = y - mapY0 + conY0;
-        const tile = mapService.getCurrentMap().getTile(x, y);
+        const tile = GameMap.getTile(mapService.getCurrentMap(), x, y);
         tile.isSeen = true;
         if (tile.blocksSight) {
             display.draw(finalPosX, finalPosY, "", null, COLORS.lightWall);
@@ -392,7 +416,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         .forEach((e) => {
             const finalPosX = e.x - mapX0 + conX0;
             const finalPosY = e.y - mapY0 + conY0;
-            const tile = mapService.getCurrentMap().getTile(e.x, e.y);
+            const tile = GameMap.getTile(mapService.getCurrentMap(), e.x, e.y);
             if (tile.isSeen) {
                 if (!visibleCoordinates.some((v) => v[0] === e.x && v[1] === e.y)) {
                     display.draw(finalPosX, finalPosY, e.symbol, e.color, COLORS.darkGround);
@@ -778,7 +802,16 @@ function playerTick(action: IAction) {
                 case "Load Game": {
                     const savedGameString = localStorage.getItem("savedGame");
                     if (savedGameString) {
-                        const savedGame: ISavedGame = JSON.parse(savedGameString);
+                        const savedGame: INewSavedGame = JSON.parse(savedGameString);
+                        componentService.loadComponents(savedGame.components);
+                        entityService.loadEntities(savedGame.entities);
+                        mapService.loadMaps(savedGame.gameMaps);
+                        mapService.setCurrentMap(savedGame.currentMapId);
+                        gameState = savedGame.gameState;
+                        knownMaps = savedGame.knownMapIds;
+                        messageLog = savedGame.messageLog;
+                        player = entityService.getEntityById(savedGame.playerId);
+                        /*
                         const loadedGame = loadGame(savedGame);
                         for (const e of loadedGame.entities) {
                             entityService.addEntity(e);
@@ -793,6 +826,7 @@ function playerTick(action: IAction) {
                         gameState = loadedGame.gameState;
                         messageLog = loadedGame.messageLog;
                         player = loadedGame.player;
+                        */
                     }
                     break;
                 }
@@ -815,7 +849,7 @@ function playerTick(action: IAction) {
                 );
             }
 
-            if (!mapService.getCurrentMap().isBlocked(player.x + action.dir[0], player.y + action.dir[1])
+            if (!GameMap.isBlocked(mapService.getCurrentMap(), player.x + action.dir[0], player.y + action.dir[1])
                 && (!targetEntity || !targetEntity.isBlocking)) {
                 player.x += action.dir[0];
                 player.y += action.dir[1];
@@ -827,7 +861,10 @@ function playerTick(action: IAction) {
                 .getEntitiesAtPos(player.x, player.y)
                 .map((e) => e.id);
             if (pickedUpEntities.length === 0) {
-                messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
+                MessageLog.addMessage(
+                    messageLog,
+                    new Message("There is nothing here to pick up.", "yellow"),
+                );
             } else {
                 results = results.concat(
                     systemService.multiDispatchEvent(pickedUpEntities, new PickupEvent(player.id)),
@@ -842,12 +879,24 @@ function playerTick(action: IAction) {
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         } else if (action.type === "exit") {
+            /*
             saveGame(player,
                 entityService.entities,
                 mapService.maps,
                 mapService.getCurrentMapId(),
                 messageLog,
                 gameState);
+            */
+            newSaveGame(
+                player.id,
+                entityService.entities,
+                componentService.components,
+                mapService.maps,
+                knownMaps,
+                mapService.getCurrentMapId(),
+                messageLog,
+                gameState,
+            );
             menuSelection = 0;
             gameState = GameState.MAIN_MENU;
             entityService.clearEntities();
@@ -862,7 +911,8 @@ function playerTick(action: IAction) {
                 ),
             );
         } else if (action.type === "wait") {
-            messageLog.addMessage(
+            MessageLog.addMessage(
+                messageLog,
                 new Message("You wait for a moment.", "white"),
             );
             gameState = GameState.ENEMY_TURN;
@@ -919,8 +969,11 @@ function playerTick(action: IAction) {
         const playerInventory = componentService
             .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
         if (action.type === "move") {
-            if (!mapService.getCurrentMap()
-                .getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight
+            if (!GameMap
+                .getTile(
+                    mapService.getCurrentMap(), targetTile[0] + action.dir[0], targetTile[1] + action.dir[1],
+            )
+                .blocksSight
             ) {
                 targetTile[0] += action.dir[0];
                 targetTile[1] += action.dir[1];

@@ -1,6 +1,7 @@
 import { ComponentService } from "../../components/Component.service";
 import { container } from "../../config/container";
 import { EntityService } from "../../entities/Entity.service";
+import { Entity } from "../../Entity";
 import { EventResult } from "../../EventResult";
 import { TakeDamageEvent } from "../../events/TakeDamageEvent";
 import { UseEvent } from "../../events/UseEvent";
@@ -57,7 +58,7 @@ function fireballScroll(entityId: number, event: UseEvent) {
 
     const targets = entityService.entities
         .filter((e) =>
-            e.distanceToPos(event.targetX, event.targetY) <= FIREBALL_CONSTANTS.RADIUS
+            Entity.distanceToPos(e.x, e.y, event.targetX, event.targetY) <= FIREBALL_CONSTANTS.RADIUS
             && componentService.entityHasComponentOfType(e.id, "FighterComponent"));
 
     for (const v of targets) {

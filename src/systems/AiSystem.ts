@@ -3,6 +3,7 @@ import { ComponentService } from "../components/Component.service";
 import { ConfusedMonsterAiComponent } from "../components/ConfusedMonsterAiComponent";
 import { FighterComponent } from "../components/FighterComponent";
 import { EntityService } from "../entities/Entity.service";
+import { Entity } from "../Entity";
 import { EventResult } from "../EventResult";
 import { AttackEvent } from "../events/AttackEvent";
 import { REvent } from "../events/Event";
@@ -78,8 +79,8 @@ export class AiSystem implements ISystem {
         if (canSeeTarget) {
             const targetFighter = this.components
                 .getComponentByEntityIdAndType(target.id, "FighterComponent") as FighterComponent;
-            if (monster.distanceTo(target) >= 2) {
-                monster.moveAstar(target, this.maps.getCurrentMap(), this.entities.entities);
+            if (Entity.distanceTo(monster, target) >= 2) {
+                Entity.moveAstar(monster, target, this.maps.getCurrentMap(), this.entities.entities);
             } else if (targetFighter && targetFighter.currHp > 0) {
                 results = results.concat(
                     this.systems.dispatchEvent(target.id, new AttackEvent(monster.id)),
@@ -100,7 +101,7 @@ export class AiSystem implements ISystem {
             const randY = monster.y + randomInt(0, 2) - 1;
 
             if (randX !== monster.x && randY !== monster.y) {
-                monster.moveTowards(randX, randY, this.maps.getCurrentMap(), this.entities.entities);
+                Entity.moveTowards(monster, randX, randY, this.maps.getCurrentMap(), this.entities.entities);
             }
 
             const hurtChance = randomInt(0, 100);

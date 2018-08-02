@@ -36,4 +36,8 @@ export class EntityService {
         }
         return Math.max(...this.entities.map((e) => e.id));
     }
+
+    public loadEntities(entities: Entity[]) {
+        this.entities = entities;
+    }
 }

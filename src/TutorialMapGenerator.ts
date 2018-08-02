@@ -116,7 +116,9 @@ export class TutorialMapGenerator implements IMapGenerator {
             RenderOrder.STAIRS,
         );
         this.entityService.addEntity(nextStairs);
-        this.componentService.addComponent(new StairComponent(this.mapService.getMaxMapId() + 1, nextStairs.id));
+        this.componentService.addComponent(
+            new StairComponent(Math.max(this.mapId, this.mapService.getMaxMapId()) + 1, nextStairs.id),
+        );
 
         return ret;
     }
@@ -129,7 +131,7 @@ export class TutorialMapGenerator implements IMapGenerator {
         }
 
         for (let x = Math.min(x1, x2); x < Math.max(x1, x2) + 1; ++x) {
-            const tile = map.getTile(x, y);
+            const tile = GameMap.getTile(map, x, y);
             tile.isBlocked = false;
             tile.blocksSight = false;
         }
@@ -143,7 +145,7 @@ export class TutorialMapGenerator implements IMapGenerator {
         }
 
         for (let y = Math.min(y1, y2); y < Math.max(y1, y2) + 1; ++y) {
-            const tile = map.getTile(x, y);
+            const tile = GameMap.getTile(map, x, y);
             tile.isBlocked = false;
             tile.blocksSight = false;
         }
@@ -169,7 +171,7 @@ export class TutorialMapGenerator implements IMapGenerator {
 
         for (let x = x1 + 1; x < x2; ++x) {
             for (let y = y1 + 1; y < y2; ++y) {
-                const tile = map.getTile(x, y);
+                const tile = GameMap.getTile(map, x, y);
                 tile.isBlocked = false;
                 tile.blocksSight = false;
             }

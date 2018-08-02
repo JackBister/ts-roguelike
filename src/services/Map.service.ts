@@ -1,20 +1,20 @@
 import { GameMap } from "../GameMap";
 
 export class MapService {
-    private _maps: GameMap[] = [];
+    public maps: GameMap[] = [];
 
-    private currentMapId: number = 0;
+    private currentMapId: number = 1;
 
     public addMap(map: GameMap): void {
-        this._maps.push(map);
+        this.maps.push(map);
     }
 
     public clearMaps(): void {
-        this._maps = [];
+        this.maps = [];
     }
 
     public getCurrentMap(): GameMap {
-        return this._maps[this.currentMapId];
+        return this.maps.find((m) => m.id === this.currentMapId);
     }
 
     public getCurrentMapId(): number {
@@ -28,14 +28,14 @@ export class MapService {
         return Math.max(...this.maps.map((m) => m.id));
     }
 
+    public loadMaps(maps: GameMap[]) {
+        this.maps = maps;
+    }
+
     public setCurrentMap(id: number): void {
         if (id < 0 || !this.maps.some((m) => m.id === id)) {
             throw new Error("Map ID out of range!");
         }
         this.currentMapId = id;
-    }
-
-    public get maps() {
-        return this._maps;
     }
 }

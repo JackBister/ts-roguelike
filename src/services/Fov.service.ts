@@ -1,5 +1,6 @@
 import { inject, injectable } from "inversify";
 import * as ROT from "rot-js";
+import { GameMap } from "../GameMap";
 import { MapService } from "./Map.service";
 
 @injectable()
@@ -17,7 +18,7 @@ export class FovService {
                     || y < 0 || y >= currentMap.height) {
                     return false;
                 }
-                return !currentMap.getTile(x, y).blocksSight;
+                return !GameMap.getTile(currentMap, x, y).blocksSight;
             },
         );
     }

@@ -43,4 +43,8 @@ export class ComponentService {
     public entityHasComponentOfType(entityId: number, type: string) {
         return this.components.some((c) => c.ownerId === entityId && c.type === type);
     }
+
+    public loadComponents(components: Component[]) {
+        this.components = components;
+    }
 }

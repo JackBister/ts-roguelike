@@ -1,15 +1,10 @@
 import * as ROT from "rot-js";
 
-import { ConfusionScroll } from "./ConfusionScroll";
 import { Entity } from "./Entity";
-import { EquipmentSlot, Equippable } from "./Equippable";
-import { FireballScroll } from "./FireballScroll";
-import { HealingPotion } from "./HealingPotion";
-import { LightningScroll } from "./LightningScroll";
-import { RenderOrder } from "./RenderOrder";
 import { FovService } from "./services/Fov.service";
 import { ITurnResult } from "./TurnResult";
 
+/*
 export function itemFromObject(obj: any): Entity {
     switch (obj.name) {
         case "Confusion Scroll":
@@ -95,7 +90,7 @@ export function itemFromObject(obj: any): Entity {
     }
     return null;
 }
-
+*/
 export interface IItem {
     owner: Entity;
     readonly name: string;

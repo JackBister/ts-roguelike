@@ -1,7 +1,10 @@
 import { AiComponent } from "./AiComponent";
 import { FighterComponent } from "./FighterComponent";
+import { InventoryComponent } from "./InventoryComponent";
 import { LevelComponent } from "./LevelComponent";
+import { PickupableComponent } from "./PickupableComponent";
 import { StairComponent } from "./StairComponent";
+import { UsableComponent } from "./UsableComponent";
 
 export interface IComponent {
     id: number;
@@ -12,5 +15,8 @@ export interface IComponent {
 
 export type Component = AiComponent
     | FighterComponent
+    | InventoryComponent
     | LevelComponent
-    | StairComponent;
+    | PickupableComponent
+    | StairComponent
+    | UsableComponent;

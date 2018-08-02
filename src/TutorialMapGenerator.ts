@@ -2,14 +2,12 @@ import { inject, injectable } from "inversify";
 import { BasicMonsterAiComponent } from "./components/BasicMonsterAiComponent";
 import { ComponentService } from "./components/Component.service";
 import { FighterComponent } from "./components/FighterComponent";
-import { ConfusionScroll } from "./ConfusionScroll";
+import { PickupableComponent } from "./components/PickupableComponent";
+import { UsableComponent } from "./components/UsableComponent";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { EquipmentSlot, Equippable } from "./Equippable";
-import { FireballScroll } from "./FireballScroll";
 import { GameMap } from "./GameMap";
-import { HealingPotion } from "./HealingPotion";
-import { LightningScroll } from "./LightningScroll";
 import { DEFAULT_OPTIONS, IGameMapOptions, IMapGenerator } from "./MapGenerator";
 import { randomInt } from "./randomInt";
 import { fromDungeonLevel, randomChoiceFromMap } from "./randomUtils";
@@ -26,7 +24,7 @@ export class TutorialMapGenerator implements IMapGenerator {
     constructor(
         @inject("EntityService") private entityService: EntityService,
         @inject("ComponentService") private componentService: ComponentService,
-    ) {}
+    ) { }
 
     public generate(opts: IGameMapOptions, player: Entity, dungeonLevel: number) {
         this.opts = {
@@ -88,8 +86,6 @@ export class TutorialMapGenerator implements IMapGenerator {
                 false,
                 "Stairs",
                 RenderOrder.STAIRS,
-                null,
-                null,
                 new Stairs(ret.dungeonLevel - 1),
             ));
         }
@@ -104,8 +100,6 @@ export class TutorialMapGenerator implements IMapGenerator {
             false,
             "Stairs",
             RenderOrder.STAIRS,
-            null,
-            null,
             new Stairs(ret.dungeonLevel + 1),
         ));
 
@@ -203,8 +197,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Lightning Scroll",
                         RenderOrder.ITEM,
-                        new LightningScroll(40, 5),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Lightning Scroll"));
+                    this.componentService.addComponent(new UsableComponent(item.id, false, "lightningScroll"));
                 } else if (itemChoice === "fireballScroll") {
                     item = new Entity(
                         this.entityId++,
@@ -215,8 +210,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Fireball Scroll",
                         RenderOrder.ITEM,
-                        new FireballScroll(25, 3),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Fireball Scroll"));
+                    this.componentService.addComponent(new UsableComponent(item.id, true, "fireballScroll"));
                 } else if (itemChoice === "confusionScroll") {
                     item = new Entity(
                         this.entityId++,
@@ -227,8 +223,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Confusion Scroll",
                         RenderOrder.ITEM,
-                        new ConfusionScroll(10),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Confusion Scroll"));
+                    this.componentService.addComponent(new UsableComponent(item.id, true, "confusionScroll"));
                 } else if (itemChoice === "healingPotion") {
                     item = new Entity(
                         this.entityId++,
@@ -239,8 +236,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         false,
                         "Healing Potion",
                         RenderOrder.ITEM,
-                        new HealingPotion(40),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Healing Potion"));
+                    this.componentService.addComponent(new UsableComponent(item.id, false, "healingPotion"));
                 } else if (itemChoice === "shield") {
                     item = new Entity(
                         this.entityId++,
@@ -253,10 +251,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         RenderOrder.ITEM,
                         null,
                         null,
-                        null,
-                        null,
                         new Equippable(EquipmentSlot.OFF_HAND, 0, 1, 0),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Shield"));
                 } else if (itemChoice === "sword") {
                     item = new Entity(
                         this.entityId++,
@@ -269,10 +266,9 @@ export class TutorialMapGenerator implements IMapGenerator {
                         RenderOrder.ITEM,
                         null,
                         null,
-                        null,
-                        null,
                         new Equippable(EquipmentSlot.MAIN_HAND, 3, 0, 0),
                     );
+                    this.componentService.addComponent(new PickupableComponent(item.id, "Sword"));
                 }
                 this.entityService.addEntity(item);
             }

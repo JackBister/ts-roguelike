@@ -4,6 +4,7 @@ import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { ComponentService } from "./components/Component.service";
 import { FighterComponent } from "./components/FighterComponent";
+import { InventoryComponent } from "./components/InventoryComponent";
 import { LevelComponent } from "./components/LevelComponent";
 import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
@@ -14,10 +15,12 @@ import { Entity } from "./Entity";
 import { Equipment } from "./Equipment";
 import { EQUIPMENTSLOTSTRINGS } from "./Equippable";
 import { AttackEvent } from "./events/AttackEvent";
+import { DropEvent } from "./events/DropEvent";
 import { GainXpEvent } from "./events/GainXpEvent";
+import { PickupEvent } from "./events/PickupEvent";
 import { ThinkEvent } from "./events/ThinkEvent";
+import { UseEvent } from "./events/UseEvent";
 import { GameState } from "./GameState";
-import { Inventory } from "./Inventory";
 import { loadGame } from "./loadGame";
 import { menu } from "./menuFunctions";
 import { Message } from "./Message";
@@ -29,6 +32,9 @@ import { MapService } from "./services/Map.service";
 import { SystemService } from "./systems/System.service";
 import { ITurnResult } from "./TurnResult";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
+
+// TODO: Ugly hack!!!!
+import "./services/usefunctions/index";
 
 export const CONSTANTS = {
     BAR_WIDTH: 20,
@@ -149,11 +155,13 @@ function addResultsToMessageLog(results: ITurnResult[]) {
         }
 
         if (v.itemAdded) {
-            v.itemAdded.isActive = false;
+            const item = entityService.getEntityById(v.itemAdded);
+            item.isActive = false;
         }
 
         if (v.itemDropped) {
-            v.itemDropped.isActive = true;
+            const item = entityService.getEntityById(v.itemDropped);
+            item.isActive = false;
         }
 
         if (v.targeting) {
@@ -271,13 +279,20 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
             CONSTANTS.SCREEN_WIDTH,
             CONSTANTS.SCREEN_HEIGHT);
     } else if (gameState === GameState.SHOW_INVENTORY) {
+        const playerInventory = componentService
+            .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
+        const playerInventoryEntities = playerInventory.items
+            .map((eid) => entityService.getEntityById(eid));
         menu(mainDisplay,
             "Inventory",
-            player.inventory.items
+            playerInventoryEntities
                 .map((i) => {
+                    // TODO: Show if equipped (EventResult)
+                    /*
                     if (i.equippable && player.equipment.equipped.includes(i.equippable)) {
                         return i.name + ` (on ${EQUIPMENTSLOTSTRINGS[i.equippable.slot]})`;
                     }
+                    */
                     return i.name;
                 }),
             menuSelection,
@@ -626,7 +641,13 @@ function onTouchStart(evt: TouchEvent) {
             }
                 , CONSTANTS.TOUCH_MOVE_REPEAT_DELAY,
             );
-        } else if (entityService.entities.some((e) => e.isActive && e.item && e.x === player.x && e.y === player.y)) {
+        } else if (entityService.entities.some
+            ((e) => e.isActive
+                && e.x === player.x
+                && e.y === player.y
+                && componentService.entityHasComponentOfType(e.id, "PickupableComponent"),
+        )
+        ) {
             action = { type: "pickup" };
         } else {
             if (gameState === GameState.MAIN_MENU
@@ -698,12 +719,11 @@ function playerTick(action: IAction) {
                         "Player",
                         RenderOrder.ACTOR,
                         null,
-                        new Inventory(26),
-                        null,
                         new Equipment(),
                     );
                     entityService.addEntity(player);
                     componentService.addComponent(new FighterComponent(player.id, 100, 1, 2));
+                    componentService.addComponent(new InventoryComponent(player.id, 26));
                     componentService.addComponent(new LevelComponent(player.id));
 
                     gameState = GameState.PLAYER_TURN;
@@ -767,13 +787,15 @@ function playerTick(action: IAction) {
 
             gameState = GameState.ENEMY_TURN;
         } else if (action.type === "pickup") {
-            const pickedUpEntity = entityService
+            const pickedUpEntities = entityService
                 .getEntitiesAtPos(player.x, player.y)
-                .filter((e) => (e.item || e.equippable));
-            if (pickedUpEntity.length > 0) {
-                results = results.concat(player.inventory.addItem(pickedUpEntity[0]));
-            } else {
+                .map((e) => e.id);
+            if (pickedUpEntities.length === 0) {
                 messageLog.addMessage(new Message("There is nothing here to pick up.", "yellow"));
+            } else {
+                results = results.concat(
+                    systemService.multiDispatchEvent(pickedUpEntities, new PickupEvent(player.id)),
+                );
             }
             gameState = GameState.ENEMY_TURN;
         } else if (action.type === "open-character-panel") {
@@ -825,27 +847,46 @@ function playerTick(action: IAction) {
             gameState = previousGameState;
         }
     } else if (gameState === GameState.SHOW_INVENTORY) {
+        const playerInventory = componentService
+            .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
         if (action.type === "exit") {
             gameState = previousGameState;
         } else if (action.type === "move") {
             menuSelection += action.dir[1];
             if (menuSelection < 0) {
                 menuSelection = 0;
-            } else if (menuSelection >= player.inventory.items.length) {
-                menuSelection = player.inventory.items.length - 1;
+            } else if (menuSelection >= playerInventory.items.length) {
+                menuSelection = playerInventory.items.length - 1;
             }
         } else if (action.type === "enter") {
-            results = results.concat(player.inventory.useItem(menuSelection, entityService.entities, fovService));
-            if (menuSelection >= player.inventory.items.length) {
-                menuSelection = player.inventory.items.length - 1;
+            results = results.concat(
+                systemService.dispatchEvent(
+                    playerInventory.items[menuSelection],
+                    new UseEvent(player.id),
+                ),
+            );
+            if (menuSelection >= playerInventory.items.length) {
+                menuSelection = playerInventory.items.length - 1;
             }
         } else if (action.type === "drop") {
-            results = results.concat(player.inventory.dropItem(menuSelection, entityService.entities));
-            if (menuSelection >= player.inventory.items.length) {
-                menuSelection = player.inventory.items.length - 1;
+            if (menuSelection < 0) {
+                menuSelection = 0;
+            }
+            if (menuSelection >= playerInventory.items.length) {
+                menuSelection = playerInventory.items.length - 1;
+            }
+
+            results.concat(
+                systemService.dispatchEvent(playerInventory.items[menuSelection], new DropEvent(player.id)),
+            );
+
+            if (menuSelection >= playerInventory.items.length) {
+                menuSelection = playerInventory.items.length - 1;
             }
         }
     } else if (gameState === GameState.TARGETING) {
+        const playerInventory = componentService
+            .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
         if (action.type === "move") {
             if (!mapService.getCurrentMap()
                 .getTile(targetTile[0] + action.dir[0], targetTile[1] + action.dir[1]).blocksSight
@@ -855,14 +896,13 @@ function playerTick(action: IAction) {
             }
         } else if (action.type === "enter") {
             results = results.concat(
-                player.inventory.useItem(menuSelection,
-                    entityService.entities,
-                    fovService,
-                    targetTile[0],
-                    targetTile[1]),
+                systemService.dispatchEvent(
+                    playerInventory.items[menuSelection],
+                    new UseEvent(player.id, targetTile[0], targetTile[1]),
+                ),
             );
-            if (menuSelection >= player.inventory.items.length) {
-                menuSelection = player.inventory.items.length - 1;
+            if (menuSelection >= playerInventory.items.length) {
+                menuSelection = playerInventory.items.length - 1;
             }
             gameState = previousGameState;
         } else if (action.type === "exit") {

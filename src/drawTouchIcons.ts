@@ -1,10 +1,13 @@
 
 import { IAction } from "./Action";
+import { ComponentService } from "./components/Component.service";
+import { InventoryComponent } from "./components/InventoryComponent";
 import { container } from "./config/container";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { GameState } from "./GameState";
 
+const componentService = container.get<ComponentService>("ComponentService");
 const entityService = container.get<EntityService>("EntityService");
 
 export function drawTouchIcons(
@@ -12,11 +15,13 @@ export function drawTouchIcons(
     player: Entity,
     playerTick: (action: IAction) => void,
 ) {
+    const playerInventory = componentService
+        .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
     const touchIcons = document.getElementById("touch-icons");
     while (touchIcons.firstChild) {
         touchIcons.removeChild(touchIcons.firstChild);
     }
-    if (gameState === GameState.SHOW_INVENTORY && player.inventory.items.length > 0) {
+    if (gameState === GameState.SHOW_INVENTORY && playerInventory.items.length > 0) {
         const dropIcon = document.createElement("span");
         dropIcon.setAttribute("class", "oi");
         dropIcon.setAttribute("data-glyph", "data-transfer-download");
@@ -31,7 +36,10 @@ export function drawTouchIcons(
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
-        && entityService.entities.some((e) => e.item && e.x === player.x && e.y === player.y)
+        && entityService.entities.some(
+            (e) => e.x === player.x && e.y === player.y
+                && componentService.entityHasComponentOfType(e.id, "PickupableComponent"),
+        )
     ) {
         const pickupIcon = document.createElement("span");
         pickupIcon.setAttribute("class", "oi");

@@ -7,11 +7,11 @@ export interface ITurnResult {
     dequipped?: Entity;
     equip?: Entity;
     equipped?: Entity;
-    itemAdded?: Entity;
-    itemDropped?: Entity;
+    itemAdded?: number;
+    itemDropped?: number;
     leveledUp?: boolean;
     message?: Message;
     target?: Entity;
-    targeting?: Entity;
+    targeting?: number;
     xp?: number;
 }

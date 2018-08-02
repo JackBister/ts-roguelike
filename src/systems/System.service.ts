@@ -18,4 +18,12 @@ export class SystemService {
         }
         return results;
     }
+
+    public multiDispatchEvent(entityId: number[], event: REvent): ITurnResult[] {
+        let results: ITurnResult[] = [];
+        for (const e of entityId) {
+            results = results.concat(this.dispatchEvent(e, event));
+        }
+        return results;
+    }
 }

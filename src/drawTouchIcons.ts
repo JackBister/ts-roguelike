@@ -55,7 +55,11 @@ export function drawTouchIcons(
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
-        && entityService.entities.some((e) => e.stairs && e.x === player.x && e.y === player.y)
+        && entityService.entities.some(
+            (e) => e.x === player.x
+                && e.y === player.y
+                && componentService.entityHasComponentOfType(e.id, "StairComponent"),
+        )
     ) {
         const stairsIcon = document.createElement("span");
         stairsIcon.setAttribute("class", "oi");

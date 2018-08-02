@@ -4,6 +4,7 @@ import { ComponentService } from "./components/Component.service";
 import { EquipmentSlot, EquippableComponent } from "./components/EquippableComponent";
 import { FighterComponent } from "./components/FighterComponent";
 import { PickupableComponent } from "./components/PickupableComponent";
+import { StairComponent } from "./components/StairComponent";
 import { UsableComponent } from "./components/UsableComponent";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
@@ -13,20 +14,27 @@ import { randomInt } from "./randomInt";
 import { fromDungeonLevel, randomChoiceFromMap } from "./randomUtils";
 import { Rect } from "./Rect";
 import { RenderOrder } from "./RenderOrder";
-import { Stairs } from "./Stairs";
+import { MapService } from "./services/Map.service";
 
 @injectable()
 export class TutorialMapGenerator implements IMapGenerator {
     private opts: IGameMapOptions;
 
-    private entityId = 1;
+    private entityId = null;
+    private mapId = null;
 
     constructor(
         @inject("EntityService") private entityService: EntityService,
         @inject("ComponentService") private componentService: ComponentService,
+        @inject("MapService") private mapService: MapService,
     ) { }
 
-    public generate(opts: IGameMapOptions, player: Entity, dungeonLevel: number) {
+    public generate(opts: IGameMapOptions,
+                    mapId: number,
+                    startingEntityId: number,
+                    player: Entity,
+                    dungeonLevel: number,
+    ) {
         this.opts = {
             height: opts.height || DEFAULT_OPTIONS.height,
             width: opts.width || DEFAULT_OPTIONS.width,
@@ -35,8 +43,10 @@ export class TutorialMapGenerator implements IMapGenerator {
             roomMaxSize: opts.roomMaxSize || DEFAULT_OPTIONS.roomMaxSize,
             roomMinSize: opts.roomMinSize || DEFAULT_OPTIONS.roomMinSize,
         };
+        this.entityId = startingEntityId;
+        this.mapId = mapId;
 
-        const ret = new GameMap(this.opts.height, this.opts.width, dungeonLevel);
+        const ret = new GameMap(this.opts.height, this.opts.width, dungeonLevel, mapId);
 
         let numRooms = 0;
         const rooms: Rect[] = [];
@@ -76,8 +86,10 @@ export class TutorialMapGenerator implements IMapGenerator {
             player.y = room0center[1];
         }
 
-        if (ret.dungeonLevel > 1) {
-            this.entityService.addEntity(new Entity(
+        const prevFloor = this.mapService.maps.find((m) => m.dungeonLevel === dungeonLevel - 1);
+        if (prevFloor) {
+            const prevStairs = new Entity(
+                this.mapId,
                 this.entityId++,
                 room0center[0],
                 room0center[1],
@@ -86,12 +98,14 @@ export class TutorialMapGenerator implements IMapGenerator {
                 false,
                 "Stairs",
                 RenderOrder.STAIRS,
-                new Stairs(ret.dungeonLevel - 1),
-            ));
+            );
+            this.entityService.addEntity(prevStairs);
+            this.componentService.addComponent(new StairComponent(prevFloor.id, prevStairs.id));
         }
 
         const lastRoomCenter = rooms[rooms.length - 1].getCenter();
-        this.entityService.addEntity(new Entity(
+        const nextStairs = new Entity(
+            this.mapId,
             this.entityId++,
             lastRoomCenter[0],
             lastRoomCenter[1],
@@ -100,8 +114,9 @@ export class TutorialMapGenerator implements IMapGenerator {
             false,
             "Stairs",
             RenderOrder.STAIRS,
-            new Stairs(ret.dungeonLevel + 1),
-        ));
+        );
+        this.entityService.addEntity(nextStairs);
+        this.componentService.addComponent(new StairComponent(this.mapService.getMaxMapId() + 1, nextStairs.id));
 
         return ret;
     }
@@ -189,6 +204,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                 const itemChoice = randomChoiceFromMap(itemChances);
                 if (itemChoice === "lightningScroll") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -202,6 +218,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new UsableComponent(item.id, false, "lightningScroll"));
                 } else if (itemChoice === "fireballScroll") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -215,6 +232,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new UsableComponent(item.id, true, "fireballScroll"));
                 } else if (itemChoice === "confusionScroll") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -228,6 +246,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new UsableComponent(item.id, true, "confusionScroll"));
                 } else if (itemChoice === "healingPotion") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -241,6 +260,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new UsableComponent(item.id, false, "healingPotion"));
                 } else if (itemChoice === "shield") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -256,6 +276,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new PickupableComponent(item.id, "Shield"));
                 } else if (itemChoice === "sword") {
                     item = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -282,6 +303,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                 const monsterChoice = randomChoiceFromMap(monsterChances);
                 if (monsterChoice === "orc") {
                     monster = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,
@@ -294,6 +316,7 @@ export class TutorialMapGenerator implements IMapGenerator {
                     this.componentService.addComponent(new FighterComponent(monster.id, 20, 0, 4, 35));
                 } else if (monsterChoice === "troll") {
                     monster = new Entity(
+                        this.mapId,
                         this.entityId++,
                         x,
                         y,

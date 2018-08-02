@@ -10,6 +10,7 @@ export type EventResult = IConsumedResult
     | IItemDroppedResult
     | ILeveledUpResult
     | IMessageResult
+    | IStairsEnteredResult
     | ITargetResult
     | ITargetingResult
     | IXpResult;
@@ -55,6 +56,11 @@ interface ILeveledUpResult {
 interface IMessageResult {
     type: "message";
     message: Message;
+}
+
+interface IStairsEnteredResult {
+    type: "stairsEntered";
+    newMapId: number;
 }
 
 interface ITargetResult {

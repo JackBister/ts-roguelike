@@ -4,10 +4,8 @@ export class MapService {
     private _maps: GameMap[] = [];
 
     private currentMapId: number = 0;
-    private mapId: number = 0;
 
     public addMap(map: GameMap): void {
-        map.id = this.mapId++;
         this._maps.push(map);
     }
 
@@ -23,8 +21,15 @@ export class MapService {
         return this.currentMapId;
     }
 
+    public getMaxMapId(): number {
+        if (this.maps.length === 0) {
+            return 0;
+        }
+        return Math.max(...this.maps.map((m) => m.id));
+    }
+
     public setCurrentMap(id: number): void {
-        if (id < 0 || id > this.mapId) {
+        if (id < 0 || !this.maps.some((m) => m.id === id)) {
             throw new Error("Map ID out of range!");
         }
         this.currentMapId = id;

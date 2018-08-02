@@ -29,4 +29,11 @@ export class EntityService {
     public getEntitiesAtPos(x: number, y: number): Entity[] {
         return this.entities.filter((e) => e.isActive && e.x === x && e.y === y);
     }
+
+    public getMaxEntityId(): number {
+        if (this.entities.length === 0) {
+            return 0;
+        }
+        return Math.max(...this.entities.map((e) => e.id));
+    }
 }

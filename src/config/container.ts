@@ -9,6 +9,7 @@ import { EquipmentSystem } from "../systems/EquipmentSystem";
 import { FighterSystem } from "../systems/FighterSystem";
 import { LevelSystem } from "../systems/LevelSystem";
 import { PickupSystem } from "../systems/PickupSystem";
+import { StairSystem } from "../systems/StairSystem";
 import { SystemService } from "../systems/System.service";
 import { UseSystem } from "../systems/UseSystem";
 
@@ -27,4 +28,5 @@ systemService.addSystem(container.resolve(EquipmentSystem));
 systemService.addSystem(container.resolve(FighterSystem));
 systemService.addSystem(container.resolve(LevelSystem));
 systemService.addSystem(container.resolve(PickupSystem));
+systemService.addSystem(container.resolve(StairSystem));
 systemService.addSystem(container.resolve(UseSystem));

@@ -20,5 +20,10 @@ export const DEFAULT_OPTIONS: IGameMapOptions = {
 };
 
 export interface IMapGenerator {
-    generate(opts: IGameMapOptions, player: Entity, dungeonLevel: number): GameMap;
+    generate(opts: IGameMapOptions,
+             mapId: number,
+             startingEntityId: number,
+             player: Entity,
+             dungeonLevel: number,
+    ): GameMap;
 }

@@ -2,10 +2,10 @@ import * as ROT from "rot-js";
 
 import { GameMap } from "./GameMap";
 import { RenderOrder } from "./RenderOrder";
-import { Stairs } from "./Stairs";
 
 export class Entity {
     constructor(
+        public mapId: number,
         public id: number,
         public x: number,
         public y: number,
@@ -14,13 +14,8 @@ export class Entity {
         public isBlocking: boolean,
         public name: string,
         public renderOrder: RenderOrder,
-        public stairs: Stairs = null,
         public isActive: boolean = true,
-        public mapId: number = null,
     ) {
-        if (this.stairs) {
-            this.stairs.owner = this;
-        }
     }
 
     public distanceTo(other: Entity) {

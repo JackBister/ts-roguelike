@@ -10,13 +10,14 @@ import { LevelComponent } from "./components/LevelComponent";
 import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
-import { enterStairs } from "./enterStairs";
 import { EntityService } from "./entities/Entity.service";
 import { Entity } from "./Entity";
 import { EventResult } from "./EventResult";
 import { AttackEvent } from "./events/AttackEvent";
 import { DropEvent } from "./events/DropEvent";
+import { EnterEvent } from "./events/EnterEvent";
 import { GainXpEvent } from "./events/GainXpEvent";
+import { GetPropertyEvent } from "./events/GetPropertyEvent";
 import { PickupEvent } from "./events/PickupEvent";
 import { ThinkEvent } from "./events/ThinkEvent";
 import { UseEvent } from "./events/UseEvent";
@@ -30,6 +31,7 @@ import { RenderOrder } from "./RenderOrder";
 import { ISavedGame, saveGame } from "./saveGame";
 import { FovService } from "./services/Fov.service";
 import { MapService } from "./services/Map.service";
+import { sumPropertyEvents } from "./sumPropertyEvents";
 import { SystemService } from "./systems/System.service";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
@@ -104,6 +106,7 @@ let currentMap = 0;
 */
 // let entities: Entity[] = [];
 let gameState: GameState = GameState.MAIN_MENU;
+const knownMaps = [0];
 let lastPointedEntityName: string = "";
 // let maps: GameMap[] = [];
 let menuSelection = 0;
@@ -158,6 +161,45 @@ function addResultsToMessageLog(results: EventResult[]) {
         if (v.type === "itemDropped") {
             const item = entityService.getEntityById(v.itemDropped);
             item.isActive = false;
+        }
+
+        if (v.type === "stairsEntered") {
+            // TODO: ?
+            if (!knownMaps.includes(v.newMapId)) {
+                mapService.addMap(new TutorialMapGenerator(entityService, componentService, mapService).generate(
+                    {
+                        height: CONSTANTS.MAP_HEIGHT,
+                        width: CONSTANTS.MAP_WIDTH,
+                    },
+                    v.newMapId,
+                    entityService.getMaxEntityId() + 1,
+                    player,
+                    mapService.getCurrentMap().dungeonLevel + 1,
+                ));
+
+                const playerFighter = componentService
+                    .getComponentByEntityIdAndType(player.id, "FighterComponent") as FighterComponent;
+
+                const maxHp = sumPropertyEvents(
+                    systemService.dispatchEvent(player.id, new GetPropertyEvent("maxHp")),
+                );
+                playerFighter.currHp += maxHp / 2;
+                if (playerFighter.currHp > maxHp) {
+                    playerFighter.currHp = maxHp;
+                }
+                messageLog.addMessage(
+                    new Message("You rest for a moment, recovering your health.", "violet"),
+                );
+
+                knownMaps.push(v.newMapId);
+            }
+
+            mapService.setCurrentMap(v.newMapId);
+            entityService.entities.forEach((e) => {
+                if (e.mapId !== v.newMapId) {
+                    e.isActive = false;
+                }
+            });
         }
 
         if (v.type === "targeting") {
@@ -333,6 +375,7 @@ function drawCon(display: ROT.Display, target: Entity) {
         }
         // TODO: Probably very slow with lots of entities + big rooms
         const visEnts = entityService.getEntitiesAtPos(x, y)
+            .filter((e) => e.isActive)
             .sort((e) => e.renderOrder);
         if (visEnts.length > 0) {
             const e = visEnts[visEnts.length - 1];
@@ -345,7 +388,7 @@ function drawCon(display: ROT.Display, target: Entity) {
     });
 
     entityService.entities
-        .filter((e) => e.stairs)
+        .filter((e) => componentService.entityHasComponentOfType(e.id, "StairComponent"))
         .forEach((e) => {
             const finalPosX = e.x - mapX0 + conX0;
             const finalPosY = e.y - mapY0 + conY0;
@@ -431,7 +474,7 @@ function entityTick() {
     }
 
     let results: EventResult[] = [];
-    for (const v of entityService.entities) {
+    for (const v of entityService.entities.filter((e) => e.isActive)) {
         results = results.concat(systemService.dispatchEvent(v.id, new ThinkEvent()));
         /*
         if (v.ai) {
@@ -641,7 +684,11 @@ function onTouchStart(evt: TouchEvent) {
                 || gameState === GameState.SHOW_INVENTORY
                 || gameState === GameState.TARGETING
                 || gameState === GameState.LEVEL_UP
-                || entityService.entities.some((e) => e.isActive && e.stairs && e.x === player.x && e.y === player.y)
+                || entityService.entities.some(
+                    (e) => e.isActive
+                        && e.x === player.x
+                        && e.y === player.y
+                        && componentService.entityHasComponentOfType(e.id, "StairComponent"))
             ) {
                 action = { type: "enter" };
             } else {
@@ -697,6 +744,7 @@ function playerTick(action: IAction) {
                 case "New Game": {
                     entityService.clearEntities();
                     player = new Entity(
+                        mapService.getMaxMapId() + 1,
                         0,
                         CONSTANTS.SCREEN_WIDTH,
                         CONSTANTS.SCREEN_HEIGHT,
@@ -714,11 +762,13 @@ function playerTick(action: IAction) {
 
                     gameState = GameState.PLAYER_TURN;
 
-                    mapService.addMap(new TutorialMapGenerator(entityService, componentService).generate(
+                    mapService.addMap(new TutorialMapGenerator(entityService, componentService, mapService).generate(
                         {
                             height: CONSTANTS.MAP_HEIGHT,
                             width: CONSTANTS.MAP_WIDTH,
                         },
+                        mapService.getMaxMapId() + 1,
+                        entityService.getMaxEntityId() + 1,
                         player,
                         1));
 
@@ -803,19 +853,14 @@ function playerTick(action: IAction) {
             entityService.clearEntities();
             mapService.clearMaps();
         } else if (action.type === "enter") {
-            const stairsUnderPlayer = entityService.getEntitiesAtPos(player.x, player.y).filter((e) => e.stairs);
-            if (stairsUnderPlayer.length > 0) {
-                let newMapId = mapService.getCurrentMapId();
-                newMapId = enterStairs(
-                    stairsUnderPlayer[0].stairs,
-                    player,
-                    mapService.maps,
-                    messageLog,
-                    new TutorialMapGenerator(entityService, componentService),
-                    mapService.getCurrentMapId() + 1,
-                );
-                mapService.setCurrentMap(newMapId);
-            }
+            results = results.concat(
+                systemService.multiDispatchEvent(
+                    entityService
+                        .getEntitiesAtPos(player.x, player.y)
+                        .map((e) => e.id),
+                    new EnterEvent(),
+                ),
+            );
         } else if (action.type === "wait") {
             messageLog.addMessage(
                 new Message("You wait for a moment.", "white"),

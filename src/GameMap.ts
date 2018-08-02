@@ -67,7 +67,7 @@ export class GameMap {
         }
         */
 
-        const ret = new GameMap(mapToCopy.height, mapToCopy.width, mapToCopy.dungeonLevel);
+        const ret = new GameMap(mapToCopy.height, mapToCopy.width, mapToCopy.dungeonLevel, mapToCopy.id);
 
         for (let x = 0; x < ret.width; ++x) {
             for (let y = 0; y < ret.height; ++y) {
@@ -78,13 +78,13 @@ export class GameMap {
         return ret;
     }
 
-    public id: number;
     private tiles: ITile[][] = [];
 
     constructor(
         public readonly height: number,
         public readonly width: number,
         public readonly dungeonLevel = 1,
+        public id: number,
     ) {
         for (let x = 0; x < this.width; ++x) {
             this.tiles[x] = [];

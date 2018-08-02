@@ -28,7 +28,7 @@ import { menu } from "./menuFunctions";
 import { Message } from "./Message";
 import { MessageLog } from "./MessageLog";
 import { RenderOrder } from "./RenderOrder";
-import { INewSavedGame, ISavedGame, newSaveGame } from "./saveGame";
+import { ISavedGame, saveGame } from "./saveGame";
 import { FovService } from "./services/Fov.service";
 import { MapService } from "./services/Map.service";
 import { sumPropertyEvents } from "./sumPropertyEvents";
@@ -92,24 +92,9 @@ const USED_KEYS = [
 ];
 
 let con: ROT.Display;
-/*
-const fov: ROT.FOV = new ROT.FOV.PreciseShadowcasting(
-    (x, y) => {
-        if (x < 0 || x >= CONSTANTS.MAP_WIDTH
-            || y < 0 || y >= CONSTANTS.MAP_HEIGHT) {
-            return false;
-        }
-        return !maps[currentMap].getTile(x, y).blocksSight;
-    },
-);
-
-let currentMap = 0;
-*/
-// let entities: Entity[] = [];
 let gameState: GameState = GameState.MAIN_MENU;
 let knownMaps = [1];
 let lastPointedEntityName: string = "";
-// let maps: GameMap[] = [];
 let menuSelection = 0;
 let messageLog: MessageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
 let panel: ROT.Display;
@@ -500,11 +485,6 @@ function entityTick() {
     let results: EventResult[] = [];
     for (const v of entityService.entities.filter((e) => e.isActive)) {
         results = results.concat(systemService.dispatchEvent(v.id, new ThinkEvent()));
-        /*
-        if (v.ai) {
-            results = results.concat(v.ai.takeTurn(player, fov, maps[currentMap], entities));
-        }
-        */
     }
 
     gameState = GameState.PLAYER_TURN;
@@ -802,7 +782,7 @@ function playerTick(action: IAction) {
                 case "Load Game": {
                     const savedGameString = localStorage.getItem("savedGame");
                     if (savedGameString) {
-                        const savedGame: INewSavedGame = JSON.parse(savedGameString);
+                        const savedGame: ISavedGame = JSON.parse(savedGameString);
                         componentService.loadComponents(savedGame.components);
                         entityService.loadEntities(savedGame.entities);
                         mapService.loadMaps(savedGame.gameMaps);
@@ -811,22 +791,6 @@ function playerTick(action: IAction) {
                         knownMaps = savedGame.knownMapIds;
                         messageLog = savedGame.messageLog;
                         player = entityService.getEntityById(savedGame.playerId);
-                        /*
-                        const loadedGame = loadGame(savedGame);
-                        for (const e of loadedGame.entities) {
-                            entityService.addEntity(e);
-                        }
-                        for (const m of loadedGame.gameMaps) {
-                            const oldId = m.id;
-                            mapService.addMap(m);
-                            if (loadedGame.currentMap === oldId) {
-                                mapService.setCurrentMap(m.id);
-                            }
-                        }
-                        gameState = loadedGame.gameState;
-                        messageLog = loadedGame.messageLog;
-                        player = loadedGame.player;
-                        */
                     }
                     break;
                 }
@@ -887,7 +851,7 @@ function playerTick(action: IAction) {
                 messageLog,
                 gameState);
             */
-            newSaveGame(
+            saveGame(
                 player.id,
                 entityService.entities,
                 componentService.components,

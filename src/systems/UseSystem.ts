@@ -24,17 +24,6 @@ export class UseSystem implements ISystem {
             return [];
         }
 
-        /*
-        if (!this.items[index].item) {
-            if (this.items[index].equippable) {
-                results.push({ equip: this.items[index] });
-            } else {
-                results.push({ message: new Message(`The ${this.items[index].name} cannot be used.`, "yellow") });
-            }
-            return results;
-        }
-        */
-
         const usable = this.componentService
             .getComponentByEntityIdAndType(entityId, "UsableComponent") as UsableComponent;
 

@@ -60,6 +60,8 @@ export class PickupSystem implements ISystem {
 
         item.x = dropper.x;
         item.y = dropper.y;
+        item.isActive = true;
+        item.mapId = dropper.mapId;
         dropperInventory.items = dropperInventory.items.filter((eid) => eid !== entityId);
 
         results.push({

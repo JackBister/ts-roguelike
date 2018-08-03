@@ -63,7 +63,7 @@ function fireballScroll(entityId: number, event: UseEvent) {
 
     for (const v of targets) {
         results.push({
-            message: new Message(`The ${v[0].name} is burned for ${FIREBALL_CONSTANTS.DAMAGE} hit points.`, "orange"),
+            message: new Message(`The ${v.name} is burned for ${FIREBALL_CONSTANTS.DAMAGE} hit points.`, "orange"),
             type: "message",
         });
         results = results.concat(

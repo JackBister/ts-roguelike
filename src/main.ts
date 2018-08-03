@@ -401,7 +401,10 @@ function drawCon(display: ROT.Display, target: Entity) {
     });
 
     entityService.entities
-        .filter((e) => componentService.entityHasComponentOfType(e.id, "StairComponent"))
+        .filter(
+            (e) => e.isActive
+                && e.mapId === mapService.getCurrentMapId()
+                && componentService.entityHasComponentOfType(e.id, "StairComponent"))
         .forEach((e) => {
             const finalPosX = e.x - mapX0 + conX0;
             const finalPosY = e.y - mapY0 + conY0;

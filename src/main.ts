@@ -1,3 +1,4 @@
+import * as LZString from "lz-string";
 import * as ROT from "rot-js";
 import { IAction } from "./Action";
 import { characterScreen } from "./characterScreen";
@@ -7,6 +8,7 @@ import { EquipmentComponent } from "./components/EquipmentComponent";
 import { FighterComponent } from "./components/FighterComponent";
 import { InventoryComponent } from "./components/InventoryComponent";
 import { LevelComponent } from "./components/LevelComponent";
+import { StairComponent } from "./components/StairComponent";
 import { container } from "./config/container";
 import { killMonster, killPlayer } from "./deathFunctions";
 import { drawTouchIcons } from "./drawTouchIcons";
@@ -36,7 +38,6 @@ import { SystemService } from "./systems/System.service";
 import { TutorialMapGenerator } from "./TutorialMapGenerator";
 
 // TODO: Ugly hack!!!!
-import { StairComponent } from "./components/StairComponent";
 import "./services/usefunctions";
 
 export const CONSTANTS = {
@@ -339,6 +340,9 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
             CONSTANTS.SCREEN_HEIGHT);
     }
     drawPanel(uiDisplay, target, lastPointedEntityName);
+    if (gameState === GameState.SAVING) {
+        mainDisplay.drawText(0, 0, "Saving...");
+    }
 }
 
 function drawCon(display: ROT.Display, target: Entity) {
@@ -780,7 +784,7 @@ function playerTick(action: IAction) {
                     break;
                 }
                 case "Load Game": {
-                    const savedGameString = localStorage.getItem("savedGame");
+                    const savedGameString = LZString.decompressFromUTF16(localStorage.getItem("savedGame"));
                     if (savedGameString) {
                         const savedGame: ISavedGame = JSON.parse(savedGameString);
                         componentService.loadComponents(savedGame.components);
@@ -843,28 +847,8 @@ function playerTick(action: IAction) {
             menuSelection = 0;
             gameState = GameState.SHOW_INVENTORY;
         } else if (action.type === "exit") {
-            /*
-            saveGame(player,
-                entityService.entities,
-                mapService.maps,
-                mapService.getCurrentMapId(),
-                messageLog,
-                gameState);
-            */
-            saveGame(
-                player.id,
-                entityService.entities,
-                componentService.components,
-                mapService.maps,
-                knownMaps,
-                mapService.getCurrentMapId(),
-                messageLog,
-                gameState,
-            );
-            menuSelection = 0;
-            gameState = GameState.MAIN_MENU;
-            entityService.clearEntities();
-            mapService.clearMaps();
+            previousGameState = gameState;
+            gameState = GameState.SAVING;
         } else if (action.type === "enter") {
             results = results.concat(
                 systemService.multiDispatchEvent(
@@ -961,6 +945,29 @@ function playerTick(action: IAction) {
     addResultsToMessageLog(results);
 
     draw(con, panel, player);
+
+    if (gameState === GameState.SAVING) {
+        // TODO: HACK!! Need to draw "Saving..." text before saving since saving is synchronous and slow as heck.
+        // Cannot guarantee that the console will have been drawn before saveGame unless we explicitly call _tick.
+        requestAnimationFrame(() => {
+            (con as any)._tick();
+            saveGame(
+                player.id,
+                entityService.entities,
+                componentService.components,
+                mapService.maps,
+                knownMaps,
+                mapService.getCurrentMapId(),
+                messageLog,
+                previousGameState,
+            );
+            menuSelection = 0;
+            gameState = GameState.MAIN_MENU;
+            entityService.clearEntities();
+            mapService.clearMaps();
+            draw(con, panel, player);
+        });
+    }
 
     entityTick();
 }

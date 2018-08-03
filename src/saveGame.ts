@@ -1,3 +1,4 @@
+import * as LZString from "lz-string";
 import { Component } from "./components/Component";
 import { Entity } from "./Entity";
 import { GameMap } from "./GameMap";
@@ -24,7 +25,7 @@ export function saveGame(playerId: number,
                          messageLog: MessageLog,
                          gameState: GameState,
 ) {
-    localStorage.setItem("savedGame", JSON.stringify({
+    localStorage.setItem("savedGame", LZString.compressToUTF16(JSON.stringify({
         components,
         currentMapId,
         entities,
@@ -33,5 +34,5 @@ export function saveGame(playerId: number,
         knownMapIds,
         messageLog,
         playerId,
-    }));
+    })));
 }

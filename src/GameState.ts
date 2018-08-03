@@ -8,4 +8,5 @@ export enum GameState {
     MAIN_MENU,
     LEVEL_UP,
     SHOW_CHARACTER_PANEL,
+    SAVING,
 }

@@ -75,6 +75,10 @@ function confusionScroll(entityId: number, event: UseEvent) {
         ),
     );
 
+    if (previousAi.length > 0) {
+        previousAi[0].isActive = false;
+    }
+
     results.push({
         type: "consumed",
     });

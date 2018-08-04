@@ -4,7 +4,10 @@ export class ComponentService {
     // TODO: private + getter
     public components: Component[] = [];
 
+    private componentId = 0;
+
     public addComponent(c: Component): void {
+        c.id = this.componentId++;
         this.components.push(c);
     }
 

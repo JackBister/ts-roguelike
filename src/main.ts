@@ -773,15 +773,17 @@ function playerTick(action: IAction) {
 
                     gameState = GameState.PLAYER_TURN;
 
+                    const newMapId = mapService.getMaxMapId() + 1;
                     mapService.addMap(new TutorialMapGenerator(entityService, componentService, mapService).generate(
                         {
                             height: CONSTANTS.MAP_HEIGHT,
                             width: CONSTANTS.MAP_WIDTH,
                         },
-                        mapService.getMaxMapId() + 1,
+                        newMapId,
                         entityService.getMaxEntityId() + 1,
                         player,
                         1));
+                    mapService.setCurrentMap(newMapId);
 
                     messageLog = new MessageLog(CONSTANTS.MESSAGE_X, CONSTANTS.MESSAGE_HEIGHT, CONSTANTS.MESSAGE_WIDTH);
                     break;

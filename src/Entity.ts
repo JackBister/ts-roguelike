@@ -22,13 +22,16 @@ export class Entity {
 
     public static moveAstar(mover: Entity, target: Entity, map: GameMap, entities: Entity[]) {
         const pather = new ROT.Path.AStar(target.x, target.y, (x, y) => {
-            return !GameMap.isBlocked(map, x, y) && !entities.some((e) => e.x === x && e.y === y);
+            return !GameMap.isBlocked(map, x, y);
         });
 
         let hasStepped = false;
 
         pather.compute(mover.x, mover.y, (x, y) => {
-            if (hasStepped) {
+            if (hasStepped
+                || (x === mover.x && y === mover.y)
+                || entities.some((e) => e.isBlocking && e.x === x && e.y === y)
+            ) {
                 return;
             }
             hasStepped = true;

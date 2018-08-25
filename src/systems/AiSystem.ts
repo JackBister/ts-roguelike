@@ -69,6 +69,10 @@ export class AiSystem implements ISystem {
 
         const monster = this.entities.getEntityById(entityId);
 
+        if (Entity.distanceTo(monster, target) > 10) {
+            return results;
+        }
+
         let canSeeTarget = false;
         this.fov.computeFov(monster.x, monster.y, 10, (x, y) => {
             if (x === target.x && y === target.y) {

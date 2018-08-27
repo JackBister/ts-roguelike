@@ -5,6 +5,7 @@ import { characterScreen } from "./characterScreen";
 import { COLORS } from "./Colors";
 import { ComponentService } from "./components/Component.service";
 import { EquipmentComponent } from "./components/EquipmentComponent";
+import { EQUIPMENTSLOTSTRINGS, EquippableComponent } from "./components/EquippableComponent";
 import { FighterComponent } from "./components/FighterComponent";
 import { InventoryComponent } from "./components/InventoryComponent";
 import { LevelComponent } from "./components/LevelComponent";
@@ -326,12 +327,15 @@ function draw(mainDisplay: ROT.Display, uiDisplay: ROT.Display, target: Entity) 
             "Inventory",
             playerInventoryEntities
                 .map((i) => {
-                    // TODO: Show if equipped (EventResult)
-                    /*
-                    if (i.equippable && player.equipment.equipped.includes(i.equippable)) {
-                        return i.name + ` (on ${EQUIPMENTSLOTSTRINGS[i.equippable.slot]})`;
+                    const equippable = componentService
+                        .getComponentByEntityIdAndType(i.id, "EquippableComponent") as EquippableComponent;
+                    if (equippable) {
+                        const playerEquipment = componentService
+                            .getComponentByEntityIdAndType(player.id, "EquipmentComponent") as EquipmentComponent;
+                        if (playerEquipment.equipped.includes(i.id)) {
+                            return i.name + ` (on ${EQUIPMENTSLOTSTRINGS[equippable.slot]})`;
+                        }
                     }
-                    */
                     return i.name;
                 }),
             menuSelection,
@@ -687,7 +691,7 @@ function onTouchStart(evt: TouchEvent) {
                 && e.x === player.x
                 && e.y === player.y
                 && componentService.entityHasComponentOfType(e.id, "PickupableComponent"),
-        )
+            )
         ) {
             action = { type: "pickup" };
         } else {
@@ -925,7 +929,7 @@ function playerTick(action: IAction) {
             if (!GameMap
                 .getTile(
                     mapService.getCurrentMap(), targetTile[0] + action.dir[0], targetTile[1] + action.dir[1],
-            )
+                )
                 .blocksSight
             ) {
                 targetTile[0] += action.dir[0];

@@ -15,12 +15,15 @@ export function drawTouchIcons(
     player: Entity,
     playerTick: (action: IAction) => void,
 ) {
-    const playerInventory = componentService
-        .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
     const touchIcons = document.getElementById("touch-icons");
     while (touchIcons.firstChild) {
         touchIcons.removeChild(touchIcons.firstChild);
     }
+    if (gameState === GameState.MAIN_MENU) {
+        return;
+    }
+    const playerInventory = componentService
+        .getComponentByEntityIdAndType(player.id, "InventoryComponent") as InventoryComponent;
     if (gameState === GameState.SHOW_INVENTORY && playerInventory.items.length > 0) {
         const dropIcon = document.createElement("span");
         dropIcon.setAttribute("class", "oi");
@@ -31,8 +34,7 @@ export function drawTouchIcons(
         };
         touchIcons.appendChild(dropIcon);
     }
-    if (gameState !== GameState.MAIN_MENU
-        && gameState !== GameState.SHOW_INVENTORY
+    if (gameState !== GameState.SHOW_INVENTORY
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
@@ -50,8 +52,7 @@ export function drawTouchIcons(
         };
         touchIcons.appendChild(pickupIcon);
     }
-    if (gameState !== GameState.MAIN_MENU
-        && gameState !== GameState.SHOW_INVENTORY
+    if (gameState !== GameState.SHOW_INVENTORY
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
@@ -70,8 +71,7 @@ export function drawTouchIcons(
         };
         touchIcons.appendChild(stairsIcon);
     }
-    if (gameState !== GameState.MAIN_MENU
-        && gameState !== GameState.SHOW_INVENTORY
+    if (gameState !== GameState.SHOW_INVENTORY
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
@@ -85,8 +85,7 @@ export function drawTouchIcons(
         };
         touchIcons.appendChild(inventoryIcon);
     }
-    if (gameState !== GameState.MAIN_MENU
-        && gameState !== GameState.SHOW_INVENTORY
+    if (gameState !== GameState.SHOW_INVENTORY
         && gameState !== GameState.TARGETING
         && gameState !== GameState.SHOW_CHARACTER_PANEL
         && gameState !== GameState.LEVEL_UP
@@ -100,9 +99,7 @@ export function drawTouchIcons(
         };
         touchIcons.appendChild(characterPanelIcon);
     }
-    if (gameState !== GameState.MAIN_MENU
-        && gameState !== GameState.LEVEL_UP
-    ) {
+    if (gameState !== GameState.LEVEL_UP) {
         const exitIcon = document.createElement("span");
         exitIcon.setAttribute("class", "oi");
         exitIcon.setAttribute("data-glyph", "circle-x");
